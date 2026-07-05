@@ -1,0 +1,42 @@
+# ---- Secrets / credentials (NEVER commit) ----
+.env
+.env.*
+!.env.template
+*.cookie
+*_SESSION_ID*
+# .mcp.json holds a machine-local interpreter path; ship .mcp.json.example instead
+.mcp.json
+
+# ---- Scraped / derived data lake (DO NOT REDISTRIBUTE) ----
+# This content is sourced from screener.in / Tijori / company filings whose Terms of
+# Use permit personal, non-commercial use only. Redistributing it publicly would
+# violate those terms and, for documents, third-party copyright. Users run the
+# scripts to build their own local copy. See DISCLAIMER.md.
+data/
+# a tiny, clearly-labelled demo fixture MAY live here (public NSE XBRL only)
+!data/sample/
+
+# ---- A separate, unrelated project that happens to share this folder ----
+christian-corpus/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# ---- Model / index artefacts (large, rebuildable) ----
+*.parquet
+*.faiss
+chroma/
+*.bin
+*.pt
+*.onnx
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

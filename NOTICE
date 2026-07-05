@@ -1,0 +1,28 @@
+Finance Research Agent — Indian Equities (NSE/BSE)
+Copyright (c) 2026 The finance-research-agent authors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+--------------------------------------------------------------------------------
+Attributions
+--------------------------------------------------------------------------------
+
+Portions of the analytical methodology in `.claude/skills/` (the peer-comparison
+quality discipline, the due-diligence severity taxonomy, and the screening-verdict
+framing) are adapted from Anthropic's public reference implementation for
+financial-services agents:
+
+    anthropics/financial-services
+    https://github.com/anthropics/financial-services
+    Licensed under the Apache License, Version 2.0
+
+These are adaptations for a local Indian-equities data lake, not verbatim copies.
+
+--------------------------------------------------------------------------------
+Third-party data (NOT included in this repository)
+--------------------------------------------------------------------------------
+
+This software retrieves data at runtime from screener.in, Tijori Finance, NSE, BSE
+and company filings. That data is owned by its respective providers, is subject to
+their Terms of Use (personal, non-commercial use only), and is NOT distributed with
+this repository. See DISCLAIMER.md.

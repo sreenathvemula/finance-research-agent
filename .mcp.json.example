@@ -1,0 +1,10 @@
+{
+  "_comment": "Copy to .mcp.json and set `command` to your finance-ai env's python and `cwd` to your repo path. .mcp.json itself is gitignored because these paths are machine-specific.",
+  "mcpServers": {
+    "findata": {
+      "command": "/path/to/your/conda/envs/finance-ai/python",
+      "args": ["-m", "agent.mcp_server"],
+      "cwd": "/path/to/this/repo"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+# Finance AI Agent — package requirements
+# Conda env: finance-ai (Python 3.11)
+#
+# PyTorch is installed separately with CUDA wheels:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# ── AI / ML ──────────────────────────────────────────────
+transformers
+sentence-transformers
+accelerate
+tiktoken
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Agent framework (OPTIONAL — agent/ uses Claude Agent SDK only) ──
+# Installed for experimentation; the Finance agent does NOT depend on these.
+langchain
+langgraph
+langchain-community
+langchain-anthropic
+langchain-openai
+langchain-huggingface
+langchain-text-splitters
+
+# ── Vector store (RAG) ───────────────────────────────────
+chromadb
+faiss-cpu
+
+# ── Data / finance stack (used by scripts/) ──────────────
+pandas
+numpy
+pyarrow          # parquet price files
+openpyxl         # Excel read/write
+yfinance
+
+# ── Scraping / HTTP (used by scripts/) ───────────────────
+requests
+curl_cffi
+beautifulsoup4
+lxml
+playwright
+python-dotenv
+
+# ── PDF → markdown pipeline (used by scripts/) ───────────
+pymupdf          # imported as fitz
+pymupdf4llm
+
+# ── Dev convenience ──────────────────────────────────────
+jupyter
+ipykernel
