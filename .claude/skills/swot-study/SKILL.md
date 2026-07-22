@@ -66,7 +66,12 @@ point must be evidenced.
      Environmental (compliance cost, ESG-linked financing), Legal (litigation, antitrust) — pull
      from `search_documents` on `annual_report`/`concall`/`credit_rating` for the company's own
      framing of these, and WebSearch (credible domains only) for the current state of each that
-     isn't in local filings.
+     isn't in local filings. **Political/regulatory specifically**: quantify the disclosed
+     dependency (government/PSU revenue share, licence/tariff/subsidy exposure) and track whether
+     any governing policy is currently under review (ministry notifications, Budget, SEBI/RBI
+     circulars) — treat this as a Threat/Opportunity depending on direction, sourced and
+     quantified, never as speculation about undisclosed political connections
+     (`investing-principles` point 13 has the full guardrail).
 
 ## Output format
 
@@ -85,9 +90,10 @@ are genuine moats vs temporary edges, and the key uncertainties.
   force) to this company, not one of its Weaknesses.
 - A Strength that fails the VRIO Rare or Inimitable test must be labelled a temporary advantage,
   not a moat — don't let a real-but-fleeting edge read as durable.
-- Distinguish structural factors (a Porter force, a regulatory barrier) from cyclical ones (a
-  current commodity price, a one-off demand spike) — a cyclical tailwind is an Opportunity with
-  an expiry date, say so.
+- Distinguish structural factors (a Porter force, a regulatory barrier) from cyclical or seasonal
+  ones (a current commodity price, a one-off demand spike, a routine festive-quarter jump) — a
+  cyclical/seasonal tailwind is an Opportunity with an expiry date, say so
+  (`investing-principles` point 14 has the cyclical/seasonal/secular classification).
 - Cite everything; no unsupported assertions. Web findings clearly marked and separated from
   local data.
 - **Timestamp it.** A SWOT — especially the External half — goes stale faster than a financial

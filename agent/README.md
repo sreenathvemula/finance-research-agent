@@ -17,7 +17,22 @@ macro/index data, and web search for anything newer than the local data.
 | Ethics assessment | `scripts/Ethical Investment.txt` framework applied to company facts |
 | Macro / index context | CPI, IIP, policy rate, G-sec, USDINR; index prices + PE/PB/yield history |
 | Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
+| Segment quarterly results | `xbrl_quarterly` — de-cumulated NSE XBRL (fixed pipeline): P&L lines + business-segment revenue/result per quarter |
 | Latest info | WebSearch / WebFetch built-in tools |
+| On-demand data refresh | `refresh_company_data` — re-scrapes one company (screener/tijori/prices/xbrl) and promotes the result into `data/companies/<SYM>/`, since the data lake is a point-in-time snapshot, not live |
 | On-demand data refresh | `refresh_company_data` — re-scrapes one company (screener/tijori/prices/xbrl) and promotes the result into `data/companies/<SYM>/`, since the data lake is a point-in-time snapshot, not live |
 
 **Hard rule:** the agent screens and analyses but never gives buy/sell/hold advice.
@@ -87,6 +102,286 @@ agent/
   tools.py           MCP tools exposing all of the above (see ALL_TOOLS)
   finance_agent.py   system prompt, SDK wiring, REPL / one-shot
 ```
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
+
+## What goes through RAG vs structured tools
+
+RAG (vector search) is only for **unstructured text**. Structured data never gets
+embedded — it is served losslessly by direct tools. This is deliberate: embedding
+numeric tables is how RAG systems misquote numbers.
+
+| Data | Served by | Why |
+|---|---|---|
+| Concall transcripts/presentations | RAG (Q&A-level chunks) | qualitative, needs semantic match |
+| Annual reports, rating rationales, announcements | RAG (sliding windows) | qualitative |
+| XBRL narrative | RAG (indexed, low priority) | numbers here are steered to structured tools |
+| Financial statements (12y CSVs) | `financial_statements` | exact numbers, zero retrieval error |
+| Prices / time series | `price_history`, `technicals_momentum` | computed, not retrieved |
+| Valuation, screening metrics | `valuation_summary`, `screen_stocks` | computed, not retrieved |
+
+Multi-quarter handling: `topic_timeline` runs one retrieval **per period** (newest
+first) so "how did guidance evolve" questions cover every quarter instead of letting
+global top-k cluster in one. Cross-company queries use `max_per_symbol` caps.
+Date-scoped questions use `date_int` metadata filters (verified exact).
 
 ## What goes through RAG vs structured tools
 

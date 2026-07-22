@@ -23,13 +23,112 @@ _PUBLICATION_DISCLAIMER = re.compile(
     r"(?i)(republished with permission\.?\s*)?no part of this publication may be "
     r"reproduced or transmitted in any form or by any means"
     r"((?:(?!good (morning|afternoon|evening)|ladies and gentlemen|welcome to)[^.]){0,260})\.?")
+_PUBLICATION_DISCLAIMER = re.compile(
+    r"(?i)(republished with permission\.?\s*)?no part of this publication may be "
+    r"reproduced or transmitted in any form or by any means"
+    r"((?:(?!good (morning|afternoon|evening)|ladies and gentlemen|welcome to)[^.]){0,260})\.?")
+_PUBLICATION_DISCLAIMER = re.compile(
+    r"(?i)(republished with permission\.?\s*)?no part of this publication may be "
+    r"reproduced or transmitted in any form or by any means"
+    r"((?:(?!good (morning|afternoon|evening)|ladies and gentlemen|welcome to)[^.]){0,260})\.?")
+_PUBLICATION_DISCLAIMER = re.compile(
+    r"(?i)(republished with permission\.?\s*)?no part of this publication may be "
+    r"reproduced or transmitted in any form or by any means"
+    r"((?:(?!good (morning|afternoon|evening)|ladies and gentlemen|welcome to)[^.]){0,260})\.?")
+_PUBLICATION_DISCLAIMER = re.compile(
+    r"(?i)(republished with permission\.?\s*)?no part of this publication may be "
+    r"reproduced or transmitted in any form or by any means"
+    r"((?:(?!good (morning|afternoon|evening)|ladies and gentlemen|welcome to)[^.]){0,260})\.?")
+_PUBLICATION_DISCLAIMER = re.compile(
+    r"(?i)(republished with permission\.?\s*)?no part of this publication may be "
+    r"reproduced or transmitted in any form or by any means"
+    r"((?:(?!good (morning|afternoon|evening)|ladies and gentlemen|welcome to)[^.]){0,260})\.?")
 _EDIT_NOTE = re.compile(r"\(This document has been (edited|transcribed)[^)]*\)")
 _DSIGN = re.compile(r"Digitally signed by [A-Z][A-Za-z .]+(\s*Date:\s*20\d\d[.\d: +'@]*)?")
 _ORDINAL = re.compile(r"\b(\d{1,3}) (st|nd|rd|th)\b")
 _MD_HEAD = re.compile(r"(^|\n)\s*#{1,6}\s+")
-_PUA = re.compile("[\uE000-\uF8FF]")   # private-use glyphs (bullets etc.)
-_ZWSP = re.compile("[\u200b\u200c\u200d\ufeff\u00ad\ufffd]")
+_PUA = re.compile(r"[-]")
 _WS = re.compile(r"[ \t]{2,}")
+
+
+def _dropcap_merge(s: str) -> str:
+    """Merge OCR drop-cap splits ('M ANAGEMENT' -> 'MANAGEMENT') — only when 3+
+    such splits cluster together (signature-block/header artifact), never on
+    isolated matches (avoids false positives on real two-token acronyms)."""
+    matches = list(_DROPCAP.finditer(s))
+    if len(matches) < 3:
+        return s
+    out, last = [], 0
+    for m in matches:
+        out.append(s[last:m.start()])
+        out.append(m.group(1) + m.group(2))
+        last = m.end()
+    out.append(s[last:])
+    return "".join(out)
+
+
+def _dropcap_merge(s: str) -> str:
+    """Merge OCR drop-cap splits ('M ANAGEMENT' -> 'MANAGEMENT') — only when 3+
+    such splits cluster together (signature-block/header artifact), never on
+    isolated matches (avoids false positives on real two-token acronyms)."""
+    matches = list(_DROPCAP.finditer(s))
+    if len(matches) < 3:
+        return s
+    out, last = [], 0
+    for m in matches:
+        out.append(s[last:m.start()])
+        out.append(m.group(1) + m.group(2))
+        last = m.end()
+    out.append(s[last:])
+    return "".join(out)
+
+
+def _dropcap_merge(s: str) -> str:
+    """Merge OCR drop-cap splits ('M ANAGEMENT' -> 'MANAGEMENT') — only when 3+
+    such splits cluster together (signature-block/header artifact), never on
+    isolated matches (avoids false positives on real two-token acronyms)."""
+    matches = list(_DROPCAP.finditer(s))
+    if len(matches) < 3:
+        return s
+    out, last = [], 0
+    for m in matches:
+        out.append(s[last:m.start()])
+        out.append(m.group(1) + m.group(2))
+        last = m.end()
+    out.append(s[last:])
+    return "".join(out)
+
+
+def _dropcap_merge(s: str) -> str:
+    """Merge OCR drop-cap splits ('M ANAGEMENT' -> 'MANAGEMENT') — only when 3+
+    such splits cluster together (signature-block/header artifact), never on
+    isolated matches (avoids false positives on real two-token acronyms)."""
+    matches = list(_DROPCAP.finditer(s))
+    if len(matches) < 3:
+        return s
+    out, last = [], 0
+    for m in matches:
+        out.append(s[last:m.start()])
+        out.append(m.group(1) + m.group(2))
+        last = m.end()
+    out.append(s[last:])
+    return "".join(out)
+
+
+def _dropcap_merge(s: str) -> str:
+    """Merge OCR drop-cap splits ('M ANAGEMENT' -> 'MANAGEMENT') — only when 3+
+    such splits cluster together (signature-block/header artifact), never on
+    isolated matches (avoids false positives on real two-token acronyms)."""
+    matches = list(_DROPCAP.finditer(s))
+    if len(matches) < 3:
+        return s
+    out, last = [], 0
+    for m in matches:
+        out.append(s[last:m.start()])
+        out.append(m.group(1) + m.group(2))
+        last = m.end()
+    out.append(s[last:])
+    return "".join(out)
 
 
 def _dropcap_merge(s: str) -> str:
@@ -59,10 +158,27 @@ def normalize_text(s: str) -> str:
     s = _PUA.sub(" ", s)
     s = _ZWSP.sub("", s)
     s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
+    s = re.sub(r"==> ?picture \[\d+ x \d+\] intentionally omitted <==", " ", s)
     # phase 1: patterns that require markdown decoration (**, ##) still present
     s = _PAGE_MARK.sub(" ", s)
     s = _PAGE_OF.sub(" ", s)
     s = _INFY_FOOTER.sub(" ", s)
+    s = _PUBLICATION_DISCLAIMER.sub(" ", s)
+    s = _PUBLICATION_DISCLAIMER.sub(" ", s)
+    s = _PUBLICATION_DISCLAIMER.sub(" ", s)
+    s = _PUBLICATION_DISCLAIMER.sub(" ", s)
+    s = _PUBLICATION_DISCLAIMER.sub(" ", s)
     s = _PUBLICATION_DISCLAIMER.sub(" ", s)
     s = _EDIT_NOTE.sub(" ", s)
     s = _DSIGN.sub(" ", s)
@@ -72,6 +188,11 @@ def normalize_text(s: str) -> str:
     s = _MD_HEAD.sub(r"\1", s)
     # phase 2: plain-text patterns (need ** / ## already stripped)
     s = _TITLE_PAGE.sub(" ", s)
+    s = re.sub(r"(?i)\bEvent:\s*transcript of .{0,120}(call|meet)[^.]{0,60}", " ", s)
+    s = re.sub(r"(?i)\bEvent:\s*transcript of .{0,120}(call|meet)[^.]{0,60}", " ", s)
+    s = re.sub(r"(?i)\bEvent:\s*transcript of .{0,120}(call|meet)[^.]{0,60}", " ", s)
+    s = re.sub(r"(?i)\bEvent:\s*transcript of .{0,120}(call|meet)[^.]{0,60}", " ", s)
+    s = re.sub(r"(?i)\bEvent:\s*transcript of .{0,120}(call|meet)[^.]{0,60}", " ", s)
     s = re.sub(r"(?i)\bEvent:\s*transcript of .{0,120}(call|meet)[^.]{0,60}", " ", s)
     s = _dropcap_merge(s)       # source wraps each drop-cap fragment in its own bold
                                  # markers ("**M** **ANAGEMENT**") — must run after ** strip
@@ -289,6 +410,222 @@ def count_letterhead_markers(text: str) -> int:
     return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
 
 
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
+_LETTERHEAD_MARKERS = [
+    re.compile(r"(?i)phiroze jeejeebhoy"),
+    re.compile(r"(?i)exchange plaza"),
+    re.compile(r"(?i)listing department"),
+    re.compile(r"(?i)scrip code"),
+    re.compile(r"(?i)regd\.?\s*office\s*:"),
+    re.compile(r"(?i)yours faithfully"),
+    re.compile(r"(?i)dear (sirs?|madam)"),
+    re.compile(r"(?i)take (the )?(same|above|this|it)[^.]{0,40}record"),
+    re.compile(r"(?i)pursuant to regulation"),
+]
+
+
+def count_letterhead_markers(text: str) -> int:
+    """How many DISTINCT cover-letter markers a text contains."""
+    return sum(1 for p in _LETTERHEAD_MARKERS if p.search(text))
+
+
 # ===========================================================================
 # presentations
 # ===========================================================================
@@ -356,6 +693,30 @@ def clean_presentation(text: str) -> list[str]:
     for bi, b in enumerate(blocks):
         first_lines = [l for l in b.splitlines()[:2]]
         if any(_DISCLAIMER.search(l) for l in first_lines) and len(b.splitlines()) > 4:
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
+            continue
+        if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
             continue
         if count_letterhead_markers(b) >= 2:   # cover letter that dodged the head cut
             continue

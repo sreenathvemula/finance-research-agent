@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 23_concall_pipeline.py â€” Convert + parse + quality-gate concall PDFs, manage disk.
 

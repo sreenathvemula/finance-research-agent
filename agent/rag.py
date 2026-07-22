@@ -343,6 +343,20 @@ def index_symbols(symbols: list[str], progress=print, force: bool = False) -> di
 
         batch_texts, batch_ids, batch_metas = [], [], []
         seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
+        seen_ann_keys: set[str] = set()   # same letter filed under 2 categories
 
         def flush():
             if not batch_texts:

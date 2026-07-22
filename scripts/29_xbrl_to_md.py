@@ -1,6 +1,6 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
-29_xbrl_to_md.py - Convert per-company NSE/BSE result XBRL into Markdown time-series.
+29_xbrl_to_md.py â€” Convert per-company NSE/BSE result XBRL into Markdown time-series.
 
 data/nse_xbrl/{SYMBOL}/{YYYY-MM-DD}_{S|C}.xml  (S=Standalone, C=Consolidated), one
 file per reported quarter. Each file holds ~130 line items on several dated contexts
@@ -50,7 +50,7 @@ _META = {
 _RAW = ("EarningsPerShare", "PerShare", "FaceValue", "Ratio", "Percentage",
         "NominalValue", "PerEquityShare")
 # duration-context items that are NOT additive across quarters (period-end stocks or
-# per-period ratios) - carried as reported when a cumulative column is de-cumulated.
+# per-period ratios) â€” carried as reported when a cumulative column is de-cumulated.
 # EPS is deliberately additive here: YTD-EPS minus prior-YTD-EPS is the standard
 # balancing-figure treatment.
 _NONADDITIVE = ("FaceValue", "PaidUpValue", "Ratio", "Percentage", "NominalValue",
@@ -136,7 +136,7 @@ def parse_file(path: Path):
     def _numeric(cid):
         return {k: float(v) for k, v in items_by_ctx.get(cid, {}).items() if _is_num(v)}
 
-    # -- quarter (primary) duration facts --
+    # â”€â”€ quarter (primary) duration facts â”€â”€
     items_q, q_period, cumulative = {}, None, False
     if items_by_ctx.get(Q_DUR):
         items_q = _numeric(Q_DUR)
@@ -174,7 +174,7 @@ def parse_file(path: Path):
                         q_period = (rstart, rend)
                     break
 
-    # -- instant facts (balance-sheet items at period end) --
+    # â”€â”€ instant facts (balance-sheet items at period end) â”€â”€
     if items_by_ctx.get(Q_INST):
         items_i = _numeric(Q_INST)
     else:
@@ -182,7 +182,7 @@ def parse_file(path: Path):
                 if k == "I" and e == rend and items_by_ctx.get(cid)]
         items_i = _numeric(max(inst, key=lambda c: len(items_by_ctx[c]))) if inst else {}
 
-    # -- year-to-date facts (kept so cumulative-only filings can be de-cumulated) --
+    # â”€â”€ year-to-date facts (kept so cumulative-only filings can be de-cumulated) â”€â”€
     items_ytd, ytd_period = {}, None
     if items_by_ctx.get(YTD_DUR):
         items_ytd = _numeric(YTD_DUR)
@@ -234,7 +234,7 @@ def _fmt(name, v):
 
 
 def _subtract(cum, prior):
-    """quarter = cumulative --' prior-cumulative, per line item.
+    """quarter = cumulative âˆ' prior-cumulative, per line item.
 
     Non-additive items (ratios, face value, paid-up capital, ...) are period-end /
     per-period values: carried as reported. Additive items missing from the prior
@@ -286,7 +286,7 @@ def _decumulate(parsed):
             d["items_q"] = _subtract(d["items_q"], prior)
             d["cumulative"] = False
             d["derived"] = True
-        # else: leave cumulative=True -> column flagged with + in the table
+        # else: leave cumulative=True -> column flagged with â€  in the table
 
 
 def build_md(symbol, variant_files, variant_name):
@@ -307,16 +307,16 @@ def build_md(symbol, variant_files, variant_name):
                 seen.add(k); order.append(k)
     company = next((d["company"] for d in parsed if d["company"]), symbol)
     scrip = next((d["scrip"] for d in parsed if d["scrip"]), "")
-    hdr = [f"# {company} \u2014 {variant_name} quarterly results (XBRL)",
-           f"_Symbol: {symbol}{(' -- BSE: '+scrip) if scrip else ''} -- "
-           f"values in \u20b9 crore (EPS/ratios as reported) \u00b7 {len(cols)} quarters._", ""]
-    # audited row; * = quarter derived by subtracting prior YTD, + = still cumulative
+    hdr = [f"# {company} â€” {variant_name} quarterly results (XBRL)",
+           f"_Symbol: {symbol}{(' Â· BSE: '+scrip) if scrip else ''} Â· "
+           f"values in â‚¹ crore (EPS/ratios as reported) Â· {len(cols)} quarters._", ""]
+    # audited row; * = quarter derived by subtracting prior YTD, â€  = still cumulative
     aud = {}
     flagged, unresolved = False, False
     for d in parsed:
-        mark = "*" if d.get("derived") else ("+" if d["cumulative"] else "")
+        mark = "*" if d.get("derived") else ("â€ " if d["cumulative"] else "")
         flagged |= mark == "*"
-        unresolved |= mark == "+"
+        unresolved |= mark == "â€ "
         aud[d["end"]] = (d["audited"][:1] or "-") + mark
     head = "| Line item | " + " | ".join(cols) + " |"
     sep  = "|---|" + "|".join(["---"] * len(cols)) + "|"
@@ -333,7 +333,7 @@ def build_md(symbol, variant_files, variant_name):
     if flagged:
         notes.append("\\* quarter derived by de-cumulating a YTD-only filing.")
     if unresolved:
-        notes.append("+ cumulative period as filed (no prior YTD available to subtract).")
+        notes.append("â€  cumulative period as filed (no prior YTD available to subtract).")
     if notes:
         rows += [""] + notes
     return "\n".join(hdr + rows) + "\n"
@@ -376,8 +376,8 @@ def run(symbols, out_root, workers):
             tot += 1 if w else 0
             files += w
             if i % 200 == 0:
-                log.info(f"  {i:,}/{len(symbols):,} - {files} md files")
-    log.info(f"DONE - {files} markdown files for {tot} companies")
+                log.info(f"  {i:,}/{len(symbols):,} â€” {files} md files")
+    log.info(f"DONE â€” {files} markdown files for {tot} companies")
 
 
 def main():

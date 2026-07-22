@@ -105,6 +105,121 @@ def is_financial(symbol: str) -> bool:
     return any(k in blob for k in _FIN_KW)
 
 
+_FIN_KW = ("bank", "financ", "nbfc", "insurance", "broking", "amc",
+           "asset management", "housing finance", "microfinance")
+
+
+def is_financial(symbol: str) -> bool:
+    """Banks/NBFCs/insurers need different analysis: their 'cash from operations'
+    embeds loan-book movements, interest is a core input not a leverage cost, and
+    debtor/inventory days are meaningless. We suppress those flags for them."""
+    try:
+        ent = da.entities()
+        row = ent[ent["symbol"].str.upper() == symbol.upper()]
+        if not row.empty:
+            blob = " ".join(str(row.iloc[0].get(c, "")) for c in
+                            ("sector", "nse_industry", "industry")).lower()
+            if any(k in blob for k in _FIN_KW):
+                return True
+    except Exception:
+        pass
+    sj = da.screener_data(symbol) or {}
+    blob = f"{sj.get('industry','')} {sj.get('about','')[:200]}".lower()
+    return any(k in blob for k in _FIN_KW)
+
+
+_FIN_KW = ("bank", "financ", "nbfc", "insurance", "broking", "amc",
+           "asset management", "housing finance", "microfinance")
+
+
+def is_financial(symbol: str) -> bool:
+    """Banks/NBFCs/insurers need different analysis: their 'cash from operations'
+    embeds loan-book movements, interest is a core input not a leverage cost, and
+    debtor/inventory days are meaningless. We suppress those flags for them."""
+    try:
+        ent = da.entities()
+        row = ent[ent["symbol"].str.upper() == symbol.upper()]
+        if not row.empty:
+            blob = " ".join(str(row.iloc[0].get(c, "")) for c in
+                            ("sector", "nse_industry", "industry")).lower()
+            if any(k in blob for k in _FIN_KW):
+                return True
+    except Exception:
+        pass
+    sj = da.screener_data(symbol) or {}
+    blob = f"{sj.get('industry','')} {sj.get('about','')[:200]}".lower()
+    return any(k in blob for k in _FIN_KW)
+
+
+_FIN_KW = ("bank", "financ", "nbfc", "insurance", "broking", "amc",
+           "asset management", "housing finance", "microfinance")
+
+
+def is_financial(symbol: str) -> bool:
+    """Banks/NBFCs/insurers need different analysis: their 'cash from operations'
+    embeds loan-book movements, interest is a core input not a leverage cost, and
+    debtor/inventory days are meaningless. We suppress those flags for them."""
+    try:
+        ent = da.entities()
+        row = ent[ent["symbol"].str.upper() == symbol.upper()]
+        if not row.empty:
+            blob = " ".join(str(row.iloc[0].get(c, "")) for c in
+                            ("sector", "nse_industry", "industry")).lower()
+            if any(k in blob for k in _FIN_KW):
+                return True
+    except Exception:
+        pass
+    sj = da.screener_data(symbol) or {}
+    blob = f"{sj.get('industry','')} {sj.get('about','')[:200]}".lower()
+    return any(k in blob for k in _FIN_KW)
+
+
+_FIN_KW = ("bank", "financ", "nbfc", "insurance", "broking", "amc",
+           "asset management", "housing finance", "microfinance")
+
+
+def is_financial(symbol: str) -> bool:
+    """Banks/NBFCs/insurers need different analysis: their 'cash from operations'
+    embeds loan-book movements, interest is a core input not a leverage cost, and
+    debtor/inventory days are meaningless. We suppress those flags for them."""
+    try:
+        ent = da.entities()
+        row = ent[ent["symbol"].str.upper() == symbol.upper()]
+        if not row.empty:
+            blob = " ".join(str(row.iloc[0].get(c, "")) for c in
+                            ("sector", "nse_industry", "industry")).lower()
+            if any(k in blob for k in _FIN_KW):
+                return True
+    except Exception:
+        pass
+    sj = da.screener_data(symbol) or {}
+    blob = f"{sj.get('industry','')} {sj.get('about','')[:200]}".lower()
+    return any(k in blob for k in _FIN_KW)
+
+
+_FIN_KW = ("bank", "financ", "nbfc", "insurance", "broking", "amc",
+           "asset management", "housing finance", "microfinance")
+
+
+def is_financial(symbol: str) -> bool:
+    """Banks/NBFCs/insurers need different analysis: their 'cash from operations'
+    embeds loan-book movements, interest is a core input not a leverage cost, and
+    debtor/inventory days are meaningless. We suppress those flags for them."""
+    try:
+        ent = da.entities()
+        row = ent[ent["symbol"].str.upper() == symbol.upper()]
+        if not row.empty:
+            blob = " ".join(str(row.iloc[0].get(c, "")) for c in
+                            ("sector", "nse_industry", "industry")).lower()
+            if any(k in blob for k in _FIN_KW):
+                return True
+    except Exception:
+        pass
+    sj = da.screener_data(symbol) or {}
+    blob = f"{sj.get('industry','')} {sj.get('about','')[:200]}".lower()
+    return any(k in blob for k in _FIN_KW)
+
+
 # ------------------------------------------------------- financial trends --
 def financial_trends(symbol: str, basis: str | None = None) -> dict:
     """Multi-year fundamental trend analysis + derived red/green flags.
@@ -488,6 +603,626 @@ def supply_chain(symbol: str) -> dict:
     else:
         out["note"] = ("supplier list is from tijori; for raw-material cost drivers, "
                        "procurement geography and named customers, use web_research")
+    return out
+
+
+# ------------------------------------------------ management guidance track --
+_GUIDANCE_QUERIES = [
+    "revenue growth guidance outlook target for the year",
+    "margin guidance EBITDA margin outlook",
+    "capex capital expenditure plan expansion guidance",
+    "management outlook expectations next year targets commitment",
+    "demand outlook order book guidance commentary",
+]
+
+
+def quarterly_actuals(symbol: str) -> dict:
+    """Compact table of the headline reported quarterly numbers (Sales, OPM%,
+    Net Profit, EPS) over all available quarters - the 'actuals' side of the
+    did-they-deliver check."""
+    smap, periods = series_map(symbol, "quarterly_results")
+    if not smap:
+        return {}
+    keep = {}
+    for label in ("Sales", "OPM", "Net Profit", "EPS"):
+        ser = _get(smap, label)
+        if ser:
+            keep[label] = {p: ser[p] for p in periods}
+    return {"periods": periods, "metrics": keep}
+
+
+def guidance_tracker(symbol: str, lookback_periods: int = 6, per_period: int = 2) -> dict:
+    """Management-credibility evidence: forward-looking / guidance statements
+    pulled from past earnings calls, paired with the ACTUAL results that were
+    subsequently reported - so the agent can judge whether management delivered
+    on what it promised. The tool surfaces both sides; the judgement is the
+    agent's (and the user's).
+
+    RAG-backed: requires the document index. Returns a clear notice if the
+    index isn't ready or the company has no concalls."""
+    out: dict = {"symbol": symbol.upper(),
+                 "how_to_use": ("match each dated guidance statement against the actual "
+                                "quarterly results that came AFTER it; a trustworthy "
+                                "management's guidance is borne out by later actuals")}
+    # actuals side (always available from structured data)
+    out["actual_quarterly_results"] = quarterly_actuals(symbol)
+
+    # guidance side (RAG over concalls)
+    try:
+        from . import rag
+        seen: set[str] = set()
+        statements: dict[str, list[dict]] = {}
+        for q in _GUIDANCE_QUERIES:
+            tl = rag.search_timeline(q, symbol,
+                                     doc_types=["concall_transcript", "concall_presentation"],
+                                     n_periods=lookback_periods, per_period=per_period)
+            for period, hits in (tl or {}).items():
+                for h in hits:
+                    key = h["text"][:120]
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    statements.setdefault(period, []).append(
+                        {"query_theme": q.split()[0], "score": h["score"],
+                         "statement": h["text"][:700]})
+        if statements:
+            out["guidance_statements_by_period"] = statements
+        else:
+            out["guidance_note"] = ("no concall guidance retrieved - company may have no "
+                                    "earnings-call transcripts indexed, or the index is "
+                                    "still building")
+    except Exception as e:
+        out["guidance_note"] = f"guidance retrieval unavailable ({type(e).__name__}); actuals still shown"
+    return out
+
+
+# ---------------------------------------------------------- sector analysis --
+def sector_analysis(sector: str | None = None, industry: str | None = None,
+                    top_n: int = 25) -> dict:
+    """Aggregate view of a sector/industry: how many companies, size distribution,
+    and the leaders by market cap with headline valuation/return metrics. Gives a
+    sector lens instead of N separate company lookups."""
+    import html
+    ent = da.entities()
+
+    def _norm(s):  # decode &amp; etc so 'Chemicals & Petrochemicals' matches
+        return html.unescape(str(s))
+
+    def _sectors_list():
+        return sorted({_norm(s) for s in ent["sector"].dropna().unique() if str(s).strip()})
+
+    df = ent
+    label = ""
+    if industry:
+        col = "nse_industry" if "nse_industry" in ent.columns else "industry"
+        q = html.unescape(industry)
+        df = ent[ent[col].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"industry~'{industry}'"
+    elif sector:
+        q = html.unescape(sector)
+        df = ent[ent["sector"].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"sector~'{sector}'"
+    else:
+        return {"error": "provide sector or industry", "available_sectors": _sectors_list()}
+    if df.empty:
+        return {"error": f"no companies matched {label}", "available_sectors": _sectors_list()}
+
+    import pandas as pd
+    df = df.copy()
+    for m in ("market_cap_cr", "pe", "roe", "roce"):
+        if m in df.columns:
+            df[m] = pd.to_numeric(df[m], errors="coerce")
+
+    out: dict = {"query": label, "n_companies": int(len(df))}
+    if "market_cap_cr" in df.columns:
+        mc = df["market_cap_cr"].dropna()
+        if not mc.empty:
+            out["total_market_cap_cr"] = round(float(mc.sum()), 0)
+            out["median_market_cap_cr"] = round(float(mc.median()), 0)
+    for m in ("pe", "roe", "roce"):
+        if m in df.columns and df[m].notna().any():
+            out[f"median_{m}"] = round(float(df[m].median()), 1)
+
+    cols = [c for c in ("symbol", "company_name", "market_cap_cr", "pe", "roe", "roce")
+            if c in df.columns]
+    top = df.sort_values("market_cap_cr", ascending=False, na_position="last").head(top_n)[cols]
+    out["leaders_by_market_cap"] = top.where(top.notna(), None).to_dict("records")
+    return out
+
+
+# ------------------------------------------------ management guidance track --
+_GUIDANCE_QUERIES = [
+    "revenue growth guidance outlook target for the year",
+    "margin guidance EBITDA margin outlook",
+    "capex capital expenditure plan expansion guidance",
+    "management outlook expectations next year targets commitment",
+    "demand outlook order book guidance commentary",
+]
+
+
+def quarterly_actuals(symbol: str) -> dict:
+    """Compact table of the headline reported quarterly numbers (Sales, OPM%,
+    Net Profit, EPS) over all available quarters - the 'actuals' side of the
+    did-they-deliver check."""
+    smap, periods = series_map(symbol, "quarterly_results")
+    if not smap:
+        return {}
+    keep = {}
+    for label in ("Sales", "OPM", "Net Profit", "EPS"):
+        ser = _get(smap, label)
+        if ser:
+            keep[label] = {p: ser[p] for p in periods}
+    return {"periods": periods, "metrics": keep}
+
+
+def guidance_tracker(symbol: str, lookback_periods: int = 6, per_period: int = 2) -> dict:
+    """Management-credibility evidence: forward-looking / guidance statements
+    pulled from past earnings calls, paired with the ACTUAL results that were
+    subsequently reported - so the agent can judge whether management delivered
+    on what it promised. The tool surfaces both sides; the judgement is the
+    agent's (and the user's).
+
+    RAG-backed: requires the document index. Returns a clear notice if the
+    index isn't ready or the company has no concalls."""
+    out: dict = {"symbol": symbol.upper(),
+                 "how_to_use": ("match each dated guidance statement against the actual "
+                                "quarterly results that came AFTER it; a trustworthy "
+                                "management's guidance is borne out by later actuals")}
+    # actuals side (always available from structured data)
+    out["actual_quarterly_results"] = quarterly_actuals(symbol)
+
+    # guidance side (RAG over concalls)
+    try:
+        from . import rag
+        seen: set[str] = set()
+        statements: dict[str, list[dict]] = {}
+        for q in _GUIDANCE_QUERIES:
+            tl = rag.search_timeline(q, symbol,
+                                     doc_types=["concall_transcript", "concall_presentation"],
+                                     n_periods=lookback_periods, per_period=per_period)
+            for period, hits in (tl or {}).items():
+                for h in hits:
+                    key = h["text"][:120]
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    statements.setdefault(period, []).append(
+                        {"query_theme": q.split()[0], "score": h["score"],
+                         "statement": h["text"][:700]})
+        if statements:
+            out["guidance_statements_by_period"] = statements
+        else:
+            out["guidance_note"] = ("no concall guidance retrieved - company may have no "
+                                    "earnings-call transcripts indexed, or the index is "
+                                    "still building")
+    except Exception as e:
+        out["guidance_note"] = f"guidance retrieval unavailable ({type(e).__name__}); actuals still shown"
+    return out
+
+
+# ---------------------------------------------------------- sector analysis --
+def sector_analysis(sector: str | None = None, industry: str | None = None,
+                    top_n: int = 25) -> dict:
+    """Aggregate view of a sector/industry: how many companies, size distribution,
+    and the leaders by market cap with headline valuation/return metrics. Gives a
+    sector lens instead of N separate company lookups."""
+    import html
+    ent = da.entities()
+
+    def _norm(s):  # decode &amp; etc so 'Chemicals & Petrochemicals' matches
+        return html.unescape(str(s))
+
+    def _sectors_list():
+        return sorted({_norm(s) for s in ent["sector"].dropna().unique() if str(s).strip()})
+
+    df = ent
+    label = ""
+    if industry:
+        col = "nse_industry" if "nse_industry" in ent.columns else "industry"
+        q = html.unescape(industry)
+        df = ent[ent[col].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"industry~'{industry}'"
+    elif sector:
+        q = html.unescape(sector)
+        df = ent[ent["sector"].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"sector~'{sector}'"
+    else:
+        return {"error": "provide sector or industry", "available_sectors": _sectors_list()}
+    if df.empty:
+        return {"error": f"no companies matched {label}", "available_sectors": _sectors_list()}
+
+    import pandas as pd
+    df = df.copy()
+    for m in ("market_cap_cr", "pe", "roe", "roce"):
+        if m in df.columns:
+            df[m] = pd.to_numeric(df[m], errors="coerce")
+
+    out: dict = {"query": label, "n_companies": int(len(df))}
+    if "market_cap_cr" in df.columns:
+        mc = df["market_cap_cr"].dropna()
+        if not mc.empty:
+            out["total_market_cap_cr"] = round(float(mc.sum()), 0)
+            out["median_market_cap_cr"] = round(float(mc.median()), 0)
+    for m in ("pe", "roe", "roce"):
+        if m in df.columns and df[m].notna().any():
+            out[f"median_{m}"] = round(float(df[m].median()), 1)
+
+    cols = [c for c in ("symbol", "company_name", "market_cap_cr", "pe", "roe", "roce")
+            if c in df.columns]
+    top = df.sort_values("market_cap_cr", ascending=False, na_position="last").head(top_n)[cols]
+    out["leaders_by_market_cap"] = top.where(top.notna(), None).to_dict("records")
+    return out
+
+
+# ------------------------------------------------ management guidance track --
+_GUIDANCE_QUERIES = [
+    "revenue growth guidance outlook target for the year",
+    "margin guidance EBITDA margin outlook",
+    "capex capital expenditure plan expansion guidance",
+    "management outlook expectations next year targets commitment",
+    "demand outlook order book guidance commentary",
+]
+
+
+def quarterly_actuals(symbol: str) -> dict:
+    """Compact table of the headline reported quarterly numbers (Sales, OPM%,
+    Net Profit, EPS) over all available quarters - the 'actuals' side of the
+    did-they-deliver check."""
+    smap, periods = series_map(symbol, "quarterly_results")
+    if not smap:
+        return {}
+    keep = {}
+    for label in ("Sales", "OPM", "Net Profit", "EPS"):
+        ser = _get(smap, label)
+        if ser:
+            keep[label] = {p: ser[p] for p in periods}
+    return {"periods": periods, "metrics": keep}
+
+
+def guidance_tracker(symbol: str, lookback_periods: int = 6, per_period: int = 2) -> dict:
+    """Management-credibility evidence: forward-looking / guidance statements
+    pulled from past earnings calls, paired with the ACTUAL results that were
+    subsequently reported - so the agent can judge whether management delivered
+    on what it promised. The tool surfaces both sides; the judgement is the
+    agent's (and the user's).
+
+    RAG-backed: requires the document index. Returns a clear notice if the
+    index isn't ready or the company has no concalls."""
+    out: dict = {"symbol": symbol.upper(),
+                 "how_to_use": ("match each dated guidance statement against the actual "
+                                "quarterly results that came AFTER it; a trustworthy "
+                                "management's guidance is borne out by later actuals")}
+    # actuals side (always available from structured data)
+    out["actual_quarterly_results"] = quarterly_actuals(symbol)
+
+    # guidance side (RAG over concalls)
+    try:
+        from . import rag
+        seen: set[str] = set()
+        statements: dict[str, list[dict]] = {}
+        for q in _GUIDANCE_QUERIES:
+            tl = rag.search_timeline(q, symbol,
+                                     doc_types=["concall_transcript", "concall_presentation"],
+                                     n_periods=lookback_periods, per_period=per_period)
+            for period, hits in (tl or {}).items():
+                for h in hits:
+                    key = h["text"][:120]
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    statements.setdefault(period, []).append(
+                        {"query_theme": q.split()[0], "score": h["score"],
+                         "statement": h["text"][:700]})
+        if statements:
+            out["guidance_statements_by_period"] = statements
+        else:
+            out["guidance_note"] = ("no concall guidance retrieved - company may have no "
+                                    "earnings-call transcripts indexed, or the index is "
+                                    "still building")
+    except Exception as e:
+        out["guidance_note"] = f"guidance retrieval unavailable ({type(e).__name__}); actuals still shown"
+    return out
+
+
+# ---------------------------------------------------------- sector analysis --
+def sector_analysis(sector: str | None = None, industry: str | None = None,
+                    top_n: int = 25) -> dict:
+    """Aggregate view of a sector/industry: how many companies, size distribution,
+    and the leaders by market cap with headline valuation/return metrics. Gives a
+    sector lens instead of N separate company lookups."""
+    import html
+    ent = da.entities()
+
+    def _norm(s):  # decode &amp; etc so 'Chemicals & Petrochemicals' matches
+        return html.unescape(str(s))
+
+    def _sectors_list():
+        return sorted({_norm(s) for s in ent["sector"].dropna().unique() if str(s).strip()})
+
+    df = ent
+    label = ""
+    if industry:
+        col = "nse_industry" if "nse_industry" in ent.columns else "industry"
+        q = html.unescape(industry)
+        df = ent[ent[col].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"industry~'{industry}'"
+    elif sector:
+        q = html.unescape(sector)
+        df = ent[ent["sector"].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"sector~'{sector}'"
+    else:
+        return {"error": "provide sector or industry", "available_sectors": _sectors_list()}
+    if df.empty:
+        return {"error": f"no companies matched {label}", "available_sectors": _sectors_list()}
+
+    import pandas as pd
+    df = df.copy()
+    for m in ("market_cap_cr", "pe", "roe", "roce"):
+        if m in df.columns:
+            df[m] = pd.to_numeric(df[m], errors="coerce")
+
+    out: dict = {"query": label, "n_companies": int(len(df))}
+    if "market_cap_cr" in df.columns:
+        mc = df["market_cap_cr"].dropna()
+        if not mc.empty:
+            out["total_market_cap_cr"] = round(float(mc.sum()), 0)
+            out["median_market_cap_cr"] = round(float(mc.median()), 0)
+    for m in ("pe", "roe", "roce"):
+        if m in df.columns and df[m].notna().any():
+            out[f"median_{m}"] = round(float(df[m].median()), 1)
+
+    cols = [c for c in ("symbol", "company_name", "market_cap_cr", "pe", "roe", "roce")
+            if c in df.columns]
+    top = df.sort_values("market_cap_cr", ascending=False, na_position="last").head(top_n)[cols]
+    out["leaders_by_market_cap"] = top.where(top.notna(), None).to_dict("records")
+    return out
+
+
+# ------------------------------------------------ management guidance track --
+_GUIDANCE_QUERIES = [
+    "revenue growth guidance outlook target for the year",
+    "margin guidance EBITDA margin outlook",
+    "capex capital expenditure plan expansion guidance",
+    "management outlook expectations next year targets commitment",
+    "demand outlook order book guidance commentary",
+]
+
+
+def quarterly_actuals(symbol: str) -> dict:
+    """Compact table of the headline reported quarterly numbers (Sales, OPM%,
+    Net Profit, EPS) over all available quarters - the 'actuals' side of the
+    did-they-deliver check."""
+    smap, periods = series_map(symbol, "quarterly_results")
+    if not smap:
+        return {}
+    keep = {}
+    for label in ("Sales", "OPM", "Net Profit", "EPS"):
+        ser = _get(smap, label)
+        if ser:
+            keep[label] = {p: ser[p] for p in periods}
+    return {"periods": periods, "metrics": keep}
+
+
+def guidance_tracker(symbol: str, lookback_periods: int = 6, per_period: int = 2) -> dict:
+    """Management-credibility evidence: forward-looking / guidance statements
+    pulled from past earnings calls, paired with the ACTUAL results that were
+    subsequently reported - so the agent can judge whether management delivered
+    on what it promised. The tool surfaces both sides; the judgement is the
+    agent's (and the user's).
+
+    RAG-backed: requires the document index. Returns a clear notice if the
+    index isn't ready or the company has no concalls."""
+    out: dict = {"symbol": symbol.upper(),
+                 "how_to_use": ("match each dated guidance statement against the actual "
+                                "quarterly results that came AFTER it; a trustworthy "
+                                "management's guidance is borne out by later actuals")}
+    # actuals side (always available from structured data)
+    out["actual_quarterly_results"] = quarterly_actuals(symbol)
+
+    # guidance side (RAG over concalls)
+    try:
+        from . import rag
+        seen: set[str] = set()
+        statements: dict[str, list[dict]] = {}
+        for q in _GUIDANCE_QUERIES:
+            tl = rag.search_timeline(q, symbol,
+                                     doc_types=["concall_transcript", "concall_presentation"],
+                                     n_periods=lookback_periods, per_period=per_period)
+            for period, hits in (tl or {}).items():
+                for h in hits:
+                    key = h["text"][:120]
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    statements.setdefault(period, []).append(
+                        {"query_theme": q.split()[0], "score": h["score"],
+                         "statement": h["text"][:700]})
+        if statements:
+            out["guidance_statements_by_period"] = statements
+        else:
+            out["guidance_note"] = ("no concall guidance retrieved - company may have no "
+                                    "earnings-call transcripts indexed, or the index is "
+                                    "still building")
+    except Exception as e:
+        out["guidance_note"] = f"guidance retrieval unavailable ({type(e).__name__}); actuals still shown"
+    return out
+
+
+# ---------------------------------------------------------- sector analysis --
+def sector_analysis(sector: str | None = None, industry: str | None = None,
+                    top_n: int = 25) -> dict:
+    """Aggregate view of a sector/industry: how many companies, size distribution,
+    and the leaders by market cap with headline valuation/return metrics. Gives a
+    sector lens instead of N separate company lookups."""
+    import html
+    ent = da.entities()
+
+    def _norm(s):  # decode &amp; etc so 'Chemicals & Petrochemicals' matches
+        return html.unescape(str(s))
+
+    def _sectors_list():
+        return sorted({_norm(s) for s in ent["sector"].dropna().unique() if str(s).strip()})
+
+    df = ent
+    label = ""
+    if industry:
+        col = "nse_industry" if "nse_industry" in ent.columns else "industry"
+        q = html.unescape(industry)
+        df = ent[ent[col].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"industry~'{industry}'"
+    elif sector:
+        q = html.unescape(sector)
+        df = ent[ent["sector"].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"sector~'{sector}'"
+    else:
+        return {"error": "provide sector or industry", "available_sectors": _sectors_list()}
+    if df.empty:
+        return {"error": f"no companies matched {label}", "available_sectors": _sectors_list()}
+
+    import pandas as pd
+    df = df.copy()
+    for m in ("market_cap_cr", "pe", "roe", "roce"):
+        if m in df.columns:
+            df[m] = pd.to_numeric(df[m], errors="coerce")
+
+    out: dict = {"query": label, "n_companies": int(len(df))}
+    if "market_cap_cr" in df.columns:
+        mc = df["market_cap_cr"].dropna()
+        if not mc.empty:
+            out["total_market_cap_cr"] = round(float(mc.sum()), 0)
+            out["median_market_cap_cr"] = round(float(mc.median()), 0)
+    for m in ("pe", "roe", "roce"):
+        if m in df.columns and df[m].notna().any():
+            out[f"median_{m}"] = round(float(df[m].median()), 1)
+
+    cols = [c for c in ("symbol", "company_name", "market_cap_cr", "pe", "roe", "roce")
+            if c in df.columns]
+    top = df.sort_values("market_cap_cr", ascending=False, na_position="last").head(top_n)[cols]
+    out["leaders_by_market_cap"] = top.where(top.notna(), None).to_dict("records")
+    return out
+
+
+# ------------------------------------------------ management guidance track --
+_GUIDANCE_QUERIES = [
+    "revenue growth guidance outlook target for the year",
+    "margin guidance EBITDA margin outlook",
+    "capex capital expenditure plan expansion guidance",
+    "management outlook expectations next year targets commitment",
+    "demand outlook order book guidance commentary",
+]
+
+
+def quarterly_actuals(symbol: str) -> dict:
+    """Compact table of the headline reported quarterly numbers (Sales, OPM%,
+    Net Profit, EPS) over all available quarters - the 'actuals' side of the
+    did-they-deliver check."""
+    smap, periods = series_map(symbol, "quarterly_results")
+    if not smap:
+        return {}
+    keep = {}
+    for label in ("Sales", "OPM", "Net Profit", "EPS"):
+        ser = _get(smap, label)
+        if ser:
+            keep[label] = {p: ser[p] for p in periods}
+    return {"periods": periods, "metrics": keep}
+
+
+def guidance_tracker(symbol: str, lookback_periods: int = 6, per_period: int = 2) -> dict:
+    """Management-credibility evidence: forward-looking / guidance statements
+    pulled from past earnings calls, paired with the ACTUAL results that were
+    subsequently reported - so the agent can judge whether management delivered
+    on what it promised. The tool surfaces both sides; the judgement is the
+    agent's (and the user's).
+
+    RAG-backed: requires the document index. Returns a clear notice if the
+    index isn't ready or the company has no concalls."""
+    out: dict = {"symbol": symbol.upper(),
+                 "how_to_use": ("match each dated guidance statement against the actual "
+                                "quarterly results that came AFTER it; a trustworthy "
+                                "management's guidance is borne out by later actuals")}
+    # actuals side (always available from structured data)
+    out["actual_quarterly_results"] = quarterly_actuals(symbol)
+
+    # guidance side (RAG over concalls)
+    try:
+        from . import rag
+        seen: set[str] = set()
+        statements: dict[str, list[dict]] = {}
+        for q in _GUIDANCE_QUERIES:
+            tl = rag.search_timeline(q, symbol,
+                                     doc_types=["concall_transcript", "concall_presentation"],
+                                     n_periods=lookback_periods, per_period=per_period)
+            for period, hits in (tl or {}).items():
+                for h in hits:
+                    key = h["text"][:120]
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    statements.setdefault(period, []).append(
+                        {"query_theme": q.split()[0], "score": h["score"],
+                         "statement": h["text"][:700]})
+        if statements:
+            out["guidance_statements_by_period"] = statements
+        else:
+            out["guidance_note"] = ("no concall guidance retrieved - company may have no "
+                                    "earnings-call transcripts indexed, or the index is "
+                                    "still building")
+    except Exception as e:
+        out["guidance_note"] = f"guidance retrieval unavailable ({type(e).__name__}); actuals still shown"
+    return out
+
+
+# ---------------------------------------------------------- sector analysis --
+def sector_analysis(sector: str | None = None, industry: str | None = None,
+                    top_n: int = 25) -> dict:
+    """Aggregate view of a sector/industry: how many companies, size distribution,
+    and the leaders by market cap with headline valuation/return metrics. Gives a
+    sector lens instead of N separate company lookups."""
+    import html
+    ent = da.entities()
+
+    def _norm(s):  # decode &amp; etc so 'Chemicals & Petrochemicals' matches
+        return html.unescape(str(s))
+
+    def _sectors_list():
+        return sorted({_norm(s) for s in ent["sector"].dropna().unique() if str(s).strip()})
+
+    df = ent
+    label = ""
+    if industry:
+        col = "nse_industry" if "nse_industry" in ent.columns else "industry"
+        q = html.unescape(industry)
+        df = ent[ent[col].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"industry~'{industry}'"
+    elif sector:
+        q = html.unescape(sector)
+        df = ent[ent["sector"].map(_norm).str.contains(q, case=False, na=False, regex=False)]
+        label = f"sector~'{sector}'"
+    else:
+        return {"error": "provide sector or industry", "available_sectors": _sectors_list()}
+    if df.empty:
+        return {"error": f"no companies matched {label}", "available_sectors": _sectors_list()}
+
+    import pandas as pd
+    df = df.copy()
+    for m in ("market_cap_cr", "pe", "roe", "roce"):
+        if m in df.columns:
+            df[m] = pd.to_numeric(df[m], errors="coerce")
+
+    out: dict = {"query": label, "n_companies": int(len(df))}
+    if "market_cap_cr" in df.columns:
+        mc = df["market_cap_cr"].dropna()
+        if not mc.empty:
+            out["total_market_cap_cr"] = round(float(mc.sum()), 0)
+            out["median_market_cap_cr"] = round(float(mc.median()), 0)
+    for m in ("pe", "roe", "roce"):
+        if m in df.columns and df[m].notna().any():
+            out[f"median_{m}"] = round(float(df[m].median()), 1)
+
+    cols = [c for c in ("symbol", "company_name", "market_cap_cr", "pe", "roe", "roce")
+            if c in df.columns]
+    top = df.sort_values("market_cap_cr", ascending=False, na_position="last").head(top_n)[cols]
+    out["leaders_by_market_cap"] = top.where(top.notna(), None).to_dict("records")
     return out
 
 

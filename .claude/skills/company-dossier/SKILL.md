@@ -1,6 +1,6 @@
 ---
 name: company-dossier
-description: Build a full investment-research dossier / scorecard for a single Indian-equity company (NSE/BSE) — business & moat, financial health with DuPont ROE decomposition, earnings quality (Piotroski/Altman quick checks), governance, management credibility, valuation, price context, ethics status, ending in Strengths / Concerns / Open-questions with an explicit per-dimension score. Use whenever the user asks to "analyse", "study", "do a deep dive on", "give me a full picture of", or "should I look at" a specific company for potential investment.
+description: Build a full investment-research dossier / scorecard for a single Indian-equity company (NSE/BSE) — business & moat with cyclical/seasonal/secular industry classification and government/policy exposure, financial health with DuPont ROE decomposition, earnings quality (Piotroski/Altman quick checks), governance, management credibility, valuation, price context, ethics status, ending in Strengths / Concerns / Open-questions with an explicit per-dimension score. Use whenever the user asks to "analyse", "study", "do a deep dive on", "give me a full picture of", or "should I look at" a specific company for potential investment.
 ---
 
 # Company dossier
@@ -27,7 +27,11 @@ qualitative checklist. A dossier that skips the quantitative scores is a summary
    actually capturing it in margins/returns — a "strength" that fails Imitability (any
    competitor could replicate it in 2-3 years) is weaker than one claimed. For raw-material/
    customer/competitor colour not in local data, `supply_chain` then WebSearch (credible domains
-   only).
+   only). **Classify the industry** cyclical / seasonal / secular (`investing-principles` point
+   14) — this frames how to read every growth/margin number in steps 3 onward — and note
+   **government/policy exposure**: disclosed government-contract/PSU-customer share, licence or
+   subsidy/PLI dependency, and any policy currently under review (point 13; stay sourced, never
+   speculate about undisclosed political ties).
 
 3. **Financial health & quality — quantitative, not just directional.**
    - `financial_health` (12y trends + concern/watch/strength flags) + `capital_allocation`
@@ -50,7 +54,9 @@ qualitative checklist. A dossier that skips the quantitative scores is a summary
    pledge), `shareholding_trends` (promoter stake direction, pledge, FII/DII flows),
    `insider_trading` (PIT disclosures). **Sloan accrual ratio** ((NI-CFO)/Average Total Assets,
    trended across available years) as the precise earnings-quality number to sit alongside the
-   qualitative accruals flag.
+   qualitative accruals flag. Note the scale of related-party transactions from `forensic_checks`
+   at a glance; if it looks material or opaque, that's the cue to hand off to the full
+   `financial-forensics` money-trail procedure rather than digging deeper here.
 
 5. **Management credibility** — `management_guidance` (past guidance vs actually-delivered
    results). If concalls aren't indexed, say so and rely on the actuals it returns. For a full
@@ -71,12 +77,15 @@ qualitative checklist. A dossier that skips the quantitative scores is a summary
 
 ## Output format
 
-Lead with a 2-3 line bottom line (where it scores well vs poorly). Then a compact **scorecard
-table** with an EXPLICIT per-dimension score, not just a reading:
+Lead with a 2-3 line bottom line (where it scores well vs poorly) and one line stating the
+industry classification (cyclical / seasonal / secular — or a stated mix) since it frames how
+every number below should be read. Then a compact **scorecard table** with an EXPLICIT
+per-dimension score, not just a reading:
 
 | Dimension | Reading | Signal |
 |---|---|---|
 | Business & moat (VRIO) | ... | strong / mixed / weak |
+| Government/policy exposure | e.g. "12% revenue PSU-tender, no live policy review found" | low / moderate / high dependency |
 | ROE quality (DuPont driver) | e.g. "margin-driven, 18% opm, leverage 1.3x" | strong / mixed / weak |
 | Fundamental trend (Piotroski F/9) | e.g. "7/9" | strong (≥7) / mixed (4-6) / weak (≤3) |
 | Solvency (Altman Z'', non-fin only) | e.g. "3.4" | strong (>2.6) / mixed (1.1-2.6) / weak (<1.1) |

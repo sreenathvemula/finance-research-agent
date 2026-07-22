@@ -64,6 +64,8 @@ ball). Ready strategy screens: Coffee Can (India quality), Magic Formula, Graham
 - **ethics-assessment** — apply the user's Ethical Investment framework to a company.
 - **risk-profile-screen** — capture the user's risk appetite, translate it into concrete
   thresholds, screen, and show what was left out (funnel + near-misses), not just a final list.
+- **risk-profile-screen** — capture the user's risk appetite, translate it into concrete
+  thresholds, screen, and show what was left out (funnel + near-misses), not just a final list.
 
 ## Web research (credible sources only)
 For anything past the local cutoff or absent locally (news, latest results, litigation, raw-

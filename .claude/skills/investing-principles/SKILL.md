@@ -53,6 +53,78 @@ an assumed component.**
 8. **Trust but verify (Sloan/Piotroski).** A reported number is an accounting choice, not
    a fact of nature. Every "quality" read earns a second pass through an earnings-quality lens
    before it's accepted — see the Quantitative scoring section below.
+9. **Diversification is a count-vs-conviction trade-off, not a free lunch.** More holdings cut
+   single-name (unsystematic) risk but also dilute the payoff from any one high-conviction idea,
+   and market-wide (systematic) risk never goes away no matter how many names you hold. See
+   Portfolio risk management below for the actual shape of that curve.
+10. **Sector/theme spread matters as much as name count.** Ten stocks in one sector is not
+    diversification; five stocks across uncorrelated sectors can be safer. Separately, judge
+    which sectors have a genuine growth tailwind — rising capex/order-book/import-substitution
+    data, policy support, rising FII allocation — via `sector_analysis`, `capital_allocation`
+    trends across a sector's leaders, and WebSearch for capex-cycle/policy news; a good company
+    in a shrinking or ex-growth sector still fights a headwind.
+11. **Moat quality needs a competition-health check, not just a market-share number.** A widening
+    moat built on genuine product/cost innovation is very different from one built on predatory
+    pricing, regulatory capture, or supplier/distributor coercion that eventually invites
+    antitrust or regulatory backlash. Cross-check `competitive_position`'s market-share trend
+    against `business_profile`/`search_documents` for HOW share was won before crediting the moat.
+12. **Alignment and exposure signals.** Prefer businesses with (a) lower discretionary exposure
+    to government policy/regulation for their core revenue (check `business_profile`/10-K risk
+    factors/WebSearch for licensing, price-control, or single-buyer-government dependence), (b)
+    rising or stable FII ownership (`fii_stake_pct` trend via `shareholding_trends`) as a
+    sophisticated-investor vote of confidence, and (c) promoter/management incentives aligned
+    with minority shareholders rather than extractive — falling promoter stake, rising pledge, or
+    heavy related-party transactions (`forensic_checks`) are the closest this data lake gets to
+    "management greed"; this data lake has no direct CEO-pay-ratio field, so pull that from the
+    annual report's MGT-9/remuneration disclosure or WebSearch (screener.in, annual report) if the
+    user wants the literal number, and say plainly when you're citing a web figure vs a tool one.
+13. **Government/policy exposure — quantify the dependency, don't speculate about connections.**
+    For any company with meaningful government/PSU/regulated-sector exposure, establish: (a) what
+    share of revenue is government/PSU-customer or licence-dependent (`business_profile` revenue
+    mix, customer concentration; `search_documents` on `annual_report` for disclosed customer/
+    segment detail), (b) which specific policies govern its economics — tariffs, import duty,
+    price controls, subsidy/PLI-scheme eligibility, sector caps on FDI/ownership — and whether any
+    are currently under review (WebSearch: PIB, ministry notifications, Budget documents, SEBI/RBI
+    circulars, credible financial press), and (c) the company's own disclosed sensitivity to a
+    named policy change (`search_documents` concalls/annual reports for management's own framing,
+    e.g. "X% of margin is PLI-linked"). **Stick to disclosed, sourced facts** — government-contract
+    share, named scheme eligibility, a minister's public statement on a sector, a credible-press
+    report of a promoter's political donation (e.g. electoral-bond disclosures, which are public
+    record) — and cite each. Do not infer or assert undisclosed political relationships,
+    partisan favouritism, or "closeness to the ruling party" from circumstance; that is
+    speculation, not evidence, and has no place in a decision-support analysis. A policy-heavy
+    business isn't automatically a bad investment — regulatory certainty and a stable policy
+    regime can be a moat too (licensed utilities, PSU banks with sovereign backing) — the point is
+    to make the *dependency* visible, not to editorialise about *why* it exists.
+14. **Cyclical vs seasonal vs secular — classify the industry before judging any trend.** These
+    are three different shapes and conflating them misreads a perfectly normal pattern as a red
+    flag (or vice versa):
+    - **Cyclical**: performance swings with the broader economic/credit/commodity cycle over
+      multi-year spans — cement, steel, capital goods, real estate, autos, most commodity chemicals,
+      and (via the credit cycle) banks/NBFCs. A cyclical company's ROCE/margin peak at the top of
+      its cycle is not the same quality signal as a structurally-improving business — check
+      `sector_analysis` and `macro_data` (capex/IIP/commodity-price/rate-cycle series) for where
+      the cycle currently sits, and look at the company's OWN multi-year ROCE/margin swing in
+      `financial_health`/`financial_statements` to see the amplitude of its own cycle before
+      extrapolating a good year forward. This is also why the Coffee Can screen's "every single
+      year" consistency bar naturally filters out purely cyclical names — a business swinging with
+      the commodity cycle structurally cannot clear it, which is a feature of the screen, not a
+      gap in it.
+    - **Seasonal**: predictable *intra-year* pattern tied to the calendar — FMCG/consumer
+      durables (festive quarters), fertilizers/agri-inputs (sowing season), ACs/beverages (summer),
+      sugar (crushing season), education (admission cycles), travel/hospitality (holiday season).
+      For a seasonal business, judge growth/margin **YoY same-quarter**, never QoQ — a QoQ "decline"
+      is routine seasonality, not deterioration. Establish the pattern from several years of
+      `xbrl_quarterly`/`financial_statements(quarterly_results)` before reading any single quarter.
+    - **Secular/structural**: growth driven by a multi-year structural shift (formalisation,
+      digitisation, financialisation of savings, demographic/penetration catch-up) that is largely
+      independent of the short economic cycle — the closest thing to a "true" Coffee Can compounder
+      backdrop, though even these have their own slower-moving sensitivities (e.g. IT services to
+      client budget cycles).
+    State explicitly which of the three (or which mix) applies to a company/sector before drawing
+    a conclusion from a growth, margin, or ROCE number — this classification belongs in every
+    sector screen (`sector_analysis`) and every company dossier's business-context framing, not
+    just forensics.
 
 ## Ready-made strategy screens (map each to the tools)
 Use these as transparent starting filters, then verify per name. State which strategy you used.
@@ -243,6 +315,160 @@ if not yet extreme) is worth flagging before it becomes an obvious "concern" in 
 Route these through the `financial-forensics` skill for a full audit — that skill's raw
 line-item pass is where the Sloan/Piotroski/Altman inputs actually get pulled and computed.
 
+## Follow the money — the cash and related-party trail
+A company can show clean growth/margin trends and still be leaking value through where cash
+actually goes once it's generated. Don't stop at "is PAT growing" — trace the flow:
+1. **Cash-flow waterfall**: operating cash flow → how it's actually deployed (`capital_allocation`
+   + `financial_statements(cash_flow)`) — capex (growth vs maintenance), investments in
+   subsidiaries/JVs, loans/advances given, debt raised vs repaid, dividends/buybacks. A company
+   whose operating cash consistently gets diverted into growing "investments in subsidiaries" or
+   "loans & advances" rather than into capex, debt reduction, or shareholder returns deserves a
+   harder look at WHO those subsidiaries/counterparties are.
+2. **Related-party transactions (RPT)**: scale of RPT revenue/expense/loans/guarantees relative to
+   total revenue/assets (`forensic_checks`, annual-report notes via `search_documents`) — a
+   growing or opaque RPT book, especially loans/guarantees to unlisted promoter-linked entities, is
+   the single most common vehicle for value leaking off the P&L investors actually see.
+3. **Use-of-proceeds check**: when a company has raised capital (IPO/QIP/rights/debt — visible as
+   a financing-activity spike in `financial_statements(cash_flow)`), check whether the actual
+   capex/investment that followed matches the stated purpose (prospectus/annual report via
+   `search_documents`, or WebSearch) — proceeds diverted from their stated use is a classic fraud
+   pattern.
+4. **Promoter pledge → where did that money go**: pledged shares raise cash for the pledgor, not
+   the company — `shareholding_trends`/`forensic_checks` shows the pledge; whether that cash served
+   a legitimate purpose (funding a rights issue, an unrelated venture) or signals promoter-level
+   financial stress is a WebSearch/concall question, not something the pledge number alone answers.
+5. **Circular patterns**: the same counterparty appearing as both a major customer and a major
+   supplier, or debtor/inventory growth persistently outrunning sales growth (channel-stuffing
+   feeding fictitious revenue rather than real cash collection).
+This is exactly the depth the `financial-forensics` skill's raw-line-item pass is built to run —
+treat this list as the conceptual checklist and hand off there for the full procedure (RPT
+notes-level detail, cash-flow waterfall by year, proceeds-usage tracing) on any company where
+growth looks real on the surface but you want to confirm the cash backing it actually stayed in
+the business and reached shareholders.
+
+## Portfolio risk management — sizing, diversification math, correlation
+
+The tools above score one company at a time; a portfolio's risk is not just the average of its
+holdings' individual risk scores. Use this section whenever the user asks "how risky is my
+portfolio", "how many stocks should I hold", "how do I size a position", or invokes stop-loss/
+holding-period reasoning.
+
+### How many names actually reduces risk
+Unsystematic (company-specific) risk falls fast with the first few names added and flattens out;
+systematic (market-wide) risk never diversifies away regardless of count. The classic finding
+(Evans & Archer 1968; reproduced many times since, incl. on Indian portfolios) is that roughly
+**15-25 stocks** captures most of the practical diversification benefit — a portfolio of 40
+uncorrelated-in-theory names is rarely meaningfully safer than one of 20, it's just harder to
+track with conviction. State this shape plainly rather than treating "more names = more safety"
+as monotonic: below ~10-12 names, each additional name usually helps a lot; above ~25-30, it
+mostly just dilutes your best ideas' contribution to the total return. **Correlation, not count,
+is what actually does the work** — see below.
+
+### Portfolio variance — the actual formula
+For two positions with weights w1, w2, volatilities σ1, σ2 (use `annualized_volatility_pct` from
+`screen_stocks`/`price_analytics` as the σ input) and correlation ρ12 between their returns:
+
+`σp² = w1²σ1² + w2²σ2² + 2·w1·w2·ρ12·σ1·σ2`
+
+Generalises to n assets as a full weight-vector × covariance-matrix × weight-vector product. The
+practical takeaway: **if ρ12 is close to +1 (two IT-services names, two PSU banks), the portfolio
+barely diversifies — you're carrying two tickets on the same bet.** If ρ12 is low or negative,
+the combined volatility can be meaningfully below either name's own volatility even at equal
+weight. This is the rigorous version of "diversify across sectors" — sector labels are a proxy
+for correlation, not the thing itself; two companies in different official sectors can still move
+together (e.g. anything geared to the same commodity or the same rate cycle).
+
+**`beta` and `annualized_volatility_pct` in `screen_stocks`/`price_analytics` are real, precise,
+tool-computed figures** — not estimates or proxies. They're derived directly from each stock's
+own actual daily-return history (volatility = std of trailing-1y daily returns × √252; beta =
+covariance with Nifty50 daily returns ÷ Nifty50's variance, over up to 3y). Nothing crude about
+them at the single-stock level. What they DON'T capture is the interaction BETWEEN holdings —
+two names can each show moderate individual volatility and still combine into a portfolio that's
+barely diversified at all, if their return series move together. That's what needs a dedicated
+multi-asset computation, not a per-stock column.
+
+**Use the `portfolio_risk` tool for this — it computes via `empyrical` (empyrical-reloaded, the
+maintained fork of Quantopian's open-source risk-stats library), not a hand-derived
+approximation.** Give it the holdings + weights and it pulls each symbol's real daily price
+history (the same parquet `price_history` reads), aligns them on a common date window, and
+computes, from the empirical data directly:
+- the full pairwise **correlation matrix** (always show this, not just a final number — a single
+  "portfolio risk: X%" figure hides which pair is actually driving it)
+- **portfolio annualized volatility** via the Markowitz w′Σw matrix form, cross-checked against
+  directly computing it from the realized portfolio return series (both should agree almost
+  exactly — the tool reports both so the number is verifiable, not asserted)
+- **portfolio CAGR, max drawdown, and Calmar ratio** from the actual compounded daily series
+- **Sharpe and Sortino ratios**, using a real risk-free rate (10y G-Sec yield from `macro_data`,
+  or a rate the user supplies)
+- **historical (empirical-percentile) VaR and CVaR at 95%/99%** — this is the fix for the crude
+  version: instead of assuming returns are normally distributed and estimating a bad day as
+  `volatility × z-score`, it takes the actual worst 5%/1% of days that really happened in the
+  window and reports their real magnitude (VaR) and average severity (CVaR/expected shortfall).
+  No normality assumption.
+- **portfolio beta vs a benchmark**, cross-checked against the weighted average of the
+  individual betas (these should match almost exactly since covariance is linear in weights —
+  a large mismatch flags that one holding's history is much shorter and is distorting the
+  common window)
+- **Herfindahl-index-based "effective number of positions"** (1/HHI) — a concentration measure
+  that's lower than the raw holding count whenever weights are uneven (e.g. three names at
+  70/15/15 behave like ~1.9 equal-weighted positions, not 3), the concrete answer to "how many
+  stocks do I really have, risk-wise."
+
+State the lookback window used (correlations and beta are not stable — a 1-year window right
+after a shared shock reads differently from a 5-year window) and that all of this is
+historical/backward-looking, not a forecast.
+
+### Position sizing
+See `risk-profile-screen`'s position-sizing note for the boundary on personalised allocation
+advice (concepts only, never a number for the user's actual portfolio). Concepts to explain when
+asked: equal-weight (simplest, ignores conviction and risk differences), conviction-weight (more
+in higher-conviction ideas, concentrates risk), inverse-volatility weight (size down the shakier
+names so each contributes similar risk, not similar capital), and a hard per-position/per-sector
+cap as a simpler practical guardrail than any of the above.
+
+### Holding period, stop-losses, and momentum — reconciling with the philosophy above
+A few common trading heuristics are real, evidence-backed effects — but they pull in a different
+direction from the quality-compounding/Coffee-Can stance this skill leads with. Present both,
+flag the tension, don't silently blend them:
+- **Momentum is a documented factor** (Jegadeesh & Titman 1993): stocks trending up over 3-12
+  months tend to keep outperforming over the next 3-12 months, and vice versa for downtrends —
+  "don't catch a falling knife" has real evidence behind it at that horizon. But over multi-year
+  horizons the evidence flips toward mean-reversion (De Bondt & Thaler) — extreme past winners
+  tend to underperform and past losers outperform over 3-5y. **Which one applies depends on your
+  holding period** — a momentum rule for a 3-12 month trade and a Coffee-Can "hold a quality
+  compounder through volatility" thesis for a 5-10y position are two different strategies; say
+  which one governs the decision at hand rather than applying "let winners run" logic to a
+  name you're holding on a 10-year quality thesis, or vice versa.
+- **A mechanical stop-loss (e.g. sell at -10% to -15%) is a capital-preservation and
+  behavioural-discipline tool**, not a quality signal — it prevents anchoring on cost basis and
+  "hoping" through a broken thesis. But applied literally to a quality-compounder position it can
+  force selling a good business into a market-wide, non-thesis-breaking drawdown (Coffee Can
+  names have had >20% drawdowns in perfectly intact multi-year compounding runs). The
+  higher-fidelity version: treat a -10-15% move as a trigger to **re-underwrite the thesis**
+  (re-run `financial_health`/`management_guidance`/recent `search_documents` for what actually
+  changed), not an automatic sell — unless the user has explicitly stated they're running a
+  trading/momentum strategy rather than a long-horizon quality strategy, in which case the
+  mechanical rule is the strategy and should be honoured as stated.
+- **Don't try to time the exact bottom or top** — trying to nail either means waiting for
+  certainty the market never provides (the Mr. Market idea above). The practical antidote is
+  staged entry/exit (buying or selling in tranches over time) rather than an all-at-once bet on a
+  single price level.
+- **Holding period and diversification are two DIFFERENT risk axes — don't conflate them.**
+  "Hold longer" reduces exposure to *market-wide volatility timing* (the chance that the point
+  you happen to look is mid-drawdown): for a diversified basket, the range of annualized outcomes
+  narrows with time, so a bad 1-year stretch is far more common than a bad 10-year stretch, and
+  expected cumulative return still compounds up — longer holding isn't inherently lower-profit,
+  it mainly lowers the probability of realising a loss at the moment you check. **But that effect
+  is about time, and does nothing for single-name concentration risk.** Holding ONE stock for 20
+  years is not diversified at any horizon — the company can suffer permanent, business-specific
+  impairment (disruption, fraud, a lost patent cliff, a failed product cycle, even outright
+  bankruptcy) at year 19 exactly as it could at year 1, and time held provides zero protection
+  against that because it's a single point of failure, not a volatility-timing problem. Time
+  diversification shrinks *systematic* outcome dispersion for a basket; only holding multiple,
+  genuinely uncorrelated names shrinks *idiosyncratic* single-company risk (see "How many names"
+  above) — you need both a long horizon AND real cross-sectional diversification; one does not
+  substitute for the other.
+
 ## Behavioural discipline (Crosby)
 When presenting conclusions, actively counter the four biases: ego (overconfidence — show the
 bear case), emotion (don't let a good story override weak numbers), attention (a hot stock isn't
@@ -255,8 +481,16 @@ the user pre-write their buy criteria and required return.
   `screen-to-shortlist` skill).
 - Analysing one company → score it against the Quality checklist + Valuation discipline +
   Red-flags + the full quantitative scoring section, then give the margin-of-safety read and the
-  behavioural caution (works with the `company-dossier` skill).
+  behavioural caution (works with the `company-dossier` skill). Always frame the read against the
+  company's cyclical/seasonal/secular classification and its government/policy exposure (points
+  13-14 above) before calling a trend good or bad.
 - Auditing one company for problems → the quantitative scores ARE the audit's backbone; hand off
-  to `financial-forensics` for the full raw-line-item procedure.
+  to `financial-forensics` for the full raw-line-item procedure AND the money-trail (cash-flow
+  waterfall + related-party) procedure.
+- Assessing a portfolio (existing holdings, not a fresh screen) → call `portfolio_risk` on the
+  actual holdings/weights for the real correlation/volatility/Sharpe/Sortino/VaR/beta numbers,
+  framed by the Portfolio risk management section above: name-count vs correlation trade-off,
+  position-sizing concepts, and the momentum/stop-loss/holding-period nuances. Works with
+  `risk-profile-screen`'s concentration check for a screened shortlist.
 - Always end with: this is evidence, scoring and ranking on stated criteria — the buy/sell/
   allocation decision, and whether it fits your circle and required return, is the user's.

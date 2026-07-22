@@ -364,6 +364,140 @@ async def screen_consistency(args):
 
 
 @tool(
+    "screen_consistency",
+    "Screen the WHOLE universe for names that clear a bar EVERY year over N years — not just "
+    "the latest year (screen_by_year) or today's snapshot (screen_stocks). This is the Coffee "
+    "Can-style 'ROCE>=15% every year for 10 years' rule in one call, done for every company at "
+    "once, instead of a coarse cut plus manual per-candidate verification. Pass any of: "
+    "sales_cr, opm_pct, net_profit_cr, eps, roce_pct, roe_pct, sales_yoy_growth_pct, "
+    "net_profit_yoy_growth_pct, eps_yoy_growth_pct — or metric='roce_or_roe' for a mixed "
+    "universe (this is NOT a separate metric, it just applies ROCE to non-financials and ROE "
+    "to banks/NBFCs per company, the standard Coffee Can convention — the output's "
+    "metric_used column always states which one was actually used per row). "
+    "max_violations lets a small number of off years through (0 = strict, every single year). "
+    "Companies with less history than min_years_required are excluded, not penalised, if newer "
+    "than the window. To combine two rules (e.g. Coffee Can's ROCE/ROE AND sales-growth "
+    "together), call this twice and intersect the returned symbols. Screening only — never advice.",
+    {"type": "object",
+     "properties": {
+         "metric": {"type": "string", "description": "a metric column name, or 'roce_or_roe' "
+                    "for the ROCE/ROE-per-company-type blend (see description)"},
+         "min_value": {"type": "number"},
+         "n_years": {"type": "integer", "default": 10},
+         "max_violations": {"type": "integer", "default": 0},
+         "min_years_required": {"type": "integer", "default": 5},
+         "sector": {"type": "string"},
+         "industry": {"type": "string"},
+         "sort_by": {"type": "string"},
+         "ascending": {"type": "boolean", "default": False},
+         "limit": {"type": "integer", "default": 25}},
+     "required": ["metric", "min_value"]},
+)
+async def screen_consistency(args):
+    from .screener import screen_consistency as _sc
+    def work():
+        return _sc(
+            args["metric"], float(args["min_value"]),
+            n_years=int(args.get("n_years", 10)),
+            max_violations=int(args.get("max_violations", 0)),
+            min_years_required=int(args.get("min_years_required", 5)),
+            sector=args.get("sector"), industry=args.get("industry"),
+            sort_by=args.get("sort_by"), ascending=bool(args.get("ascending", False)),
+            limit=int(args.get("limit", 25)),
+        )
+    try:
+        df, matched, note = await asyncio.to_thread(work)
+    except ValueError as e:
+        return _err(str(e))
+    if matched == 0:
+        return _err(f"no companies matched: {note}")
+    head = f"{matched} companies matched ({note}); showing {len(df)}.\n\n"
+    return _text(head + da.df_to_md(df, max_rows=int(args.get("limit", 25))))
+
+
+@tool(
+    "screen_by_year",
+    "Screen the universe by a SPECIFIC HISTORICAL YEAR, not today's snapshot — answers "
+    "'ROCE > 20% in FY2024' or 'best/worst price performers in 2023'. "
+    "kind='fundamental' (default): year = fiscal year ending March (year=2024 means FY ending "
+    "Mar 2024); filter/sort columns: sales_cr, opm_pct, net_profit_cr, eps, roce_pct (non-"
+    "financials), roe_pct (banks/NBFCs), sales_yoy_growth_pct, net_profit_yoy_growth_pct, "
+    "eps_yoy_growth_pct. kind='price_return': year = calendar year; filter/sort on return_pct "
+    "(split/bonus/dividend-adjusted close-to-close for that year). This is a point-in-time "
+    "screen — not a recommendation, and extreme ratios on tiny-capital-base companies should "
+    "be sanity-checked before acting on them.",
+    {"type": "object",
+     "properties": {
+         "year": {"type": "integer", "description": "fiscal year (Mar-end) or calendar year per 'kind'"},
+         "kind": {"type": "string", "enum": ["fundamental", "price_return"], "default": "fundamental"},
+         "min": {"type": "object", "additionalProperties": {"type": "number"}},
+         "max": {"type": "object", "additionalProperties": {"type": "number"}},
+         "sector": {"type": "string"},
+         "industry": {"type": "string"},
+         "sort_by": {"type": "string"},
+         "ascending": {"type": "boolean", "default": False},
+         "limit": {"type": "integer", "default": 25}},
+     "required": ["year"]},
+)
+async def screen_by_year(args):
+    from .screener import screen_by_year as _sby
+    def work():
+        return _sby(
+            int(args["year"]), kind=args.get("kind", "fundamental"),
+            min_filters=args.get("min"), max_filters=args.get("max"),
+            sector=args.get("sector"), industry=args.get("industry"),
+            sort_by=args.get("sort_by"), ascending=bool(args.get("ascending", False)),
+            limit=int(args.get("limit", 25)),
+        )
+    df, matched, note = await asyncio.to_thread(work)
+    if matched == 0:
+        return _err(f"no companies matched for {note}")
+    head = f"{matched} companies matched ({note}); showing {len(df)}.\n\n"
+    return _text(head + da.df_to_md(df, max_rows=int(args.get("limit", 25))))
+
+
+@tool(
+    "screen_by_year",
+    "Screen the universe by a SPECIFIC HISTORICAL YEAR, not today's snapshot — answers "
+    "'ROCE > 20% in FY2024' or 'best/worst price performers in 2023'. "
+    "kind='fundamental' (default): year = fiscal year ending March (year=2024 means FY ending "
+    "Mar 2024); filter/sort columns: sales_cr, opm_pct, net_profit_cr, eps, roce_pct (non-"
+    "financials), roe_pct (banks/NBFCs), sales_yoy_growth_pct, net_profit_yoy_growth_pct, "
+    "eps_yoy_growth_pct. kind='price_return': year = calendar year; filter/sort on return_pct "
+    "(split/bonus/dividend-adjusted close-to-close for that year). This is a point-in-time "
+    "screen — not a recommendation, and extreme ratios on tiny-capital-base companies should "
+    "be sanity-checked before acting on them.",
+    {"type": "object",
+     "properties": {
+         "year": {"type": "integer", "description": "fiscal year (Mar-end) or calendar year per 'kind'"},
+         "kind": {"type": "string", "enum": ["fundamental", "price_return"], "default": "fundamental"},
+         "min": {"type": "object", "additionalProperties": {"type": "number"}},
+         "max": {"type": "object", "additionalProperties": {"type": "number"}},
+         "sector": {"type": "string"},
+         "industry": {"type": "string"},
+         "sort_by": {"type": "string"},
+         "ascending": {"type": "boolean", "default": False},
+         "limit": {"type": "integer", "default": 25}},
+     "required": ["year"]},
+)
+async def screen_by_year(args):
+    from .screener import screen_by_year as _sby
+    def work():
+        return _sby(
+            int(args["year"]), kind=args.get("kind", "fundamental"),
+            min_filters=args.get("min"), max_filters=args.get("max"),
+            sector=args.get("sector"), industry=args.get("industry"),
+            sort_by=args.get("sort_by"), ascending=bool(args.get("ascending", False)),
+            limit=int(args.get("limit", 25)),
+        )
+    df, matched, note = await asyncio.to_thread(work)
+    if matched == 0:
+        return _err(f"no companies matched for {note}")
+    head = f"{matched} companies matched ({note}); showing {len(df)}.\n\n"
+    return _text(head + da.df_to_md(df, max_rows=int(args.get("limit", 25))))
+
+
+@tool(
     "search_documents",
     "Semantic search over the indexed document corpus: earnings-call transcripts (Q&A level) "
     "and presentations, annual reports, credit-rating rationales, corporate announcements, "
@@ -529,6 +663,804 @@ async def index_data(args):
     if r is None:
         return _err(f"unknown index '{args.get('index')}'. Available: {', '.join(da.index_list())}")
     return _text(r)
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
+
+
+@tool(
+    "xbrl_quarterly",
+    "NSE XBRL quarterly filings (de-cumulated to true standalone quarters, verified vs "
+    "screener): full P&L line items per quarter + business-SEGMENT revenue/result where "
+    "filed (e.g. Jio/Retail/O2C for Reliance — segment data is NOT in the screener CSVs). "
+    "Only for companies whose XBRL has been refreshed with the fixed pipeline; falls back "
+    "with instructions if absent. basis: consolidated|standalone.",
+    {"type": "object",
+     "properties": {"symbol": {"type": "string"},
+                    "basis": {"type": "string", "enum": ["consolidated", "standalone"],
+                              "default": "consolidated"},
+                    "quarters": {"type": "integer", "default": 8},
+                    "include_segments": {"type": "boolean", "default": True}},
+     "required": ["symbol"]},
+)
+async def xbrl_quarterly(args):
+    def work():
+        import json as _json
+        from .config import STRUCTURED
+        sym = args["symbol"].upper()
+        p = STRUCTURED / f"{sym}_xbrl.json"
+        if not p.exists():
+            return (f"No refreshed XBRL for {sym}. Quarterly numbers are available via "
+                    f"financial_statements(symbol, 'quarterly_results'). (To refresh XBRL: "
+                    f"python scripts/02_nse_xbrl_quarterly.py --symbol {sym} then "
+                    f"scripts/29_xbrl_to_md.py.)")
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        want_cons = args.get("basis", "consolidated") == "consolidated"
+        qs = [q for q in d["quarters"] if bool(q.get("consolidated")) == want_cons]
+        qs.sort(key=lambda q: q.get("period_end", ""), reverse=True)
+        qs = qs[: int(args.get("quarters", 8))]
+        if not qs:
+            return f"No {args.get('basis')} quarters in {sym} XBRL."
+        headline = ["Revenue from operations", "Total income", "Total expenses",
+                    "Profit before tax", "Net profit for period", "Basic EPS"]
+        lines = [f"{sym} XBRL {args.get('basis', 'consolidated')} quarters "
+                 f"(Rs crore, de-cumulated; * = derived by YTD subtraction):"]
+        hdr = " | ".join(["item"] + [q["period_end"] for q in qs])
+        lines += [hdr, " | ".join(["---"] * (len(qs) + 1))]
+        keys = [k for k in qs[0].get("facts", {}) if k in headline] or \
+               list(qs[0].get("facts", {}))[:8]
+        for k in keys:
+            row = [k] + [str(q.get("facts", {}).get(k, "")) for q in qs]
+            lines.append(" | ".join(row))
+        if args.get("include_segments", True):
+            for q in qs[:4]:
+                segs = q.get("segments") or q.get("facts", {}).get("segments")
+                if segs:
+                    lines.append(f"\nSegments {q['period_end']}: "
+                                 + _js(segs, limit=1500))
+        lines.append(f"\n(audited flags: "
+                     + ", ".join(f"{q['period_end']}={q.get('audited', '?')}" for q in qs[:4])
+                     + f"; source: NSE XBRL, fetched {d.get('fetched_at', '?')})")
+        return "\n".join(lines)
+    return _text(await asyncio.to_thread(work))
 
 
 @tool(
@@ -777,6 +1709,58 @@ async def price_analytics(args):
 
 
 @tool(
+    "portfolio_risk",
+    "Portfolio-level risk from ACTUAL historical daily returns — not single-stock "
+    "volatility/beta treated as a portfolio proxy. Takes named holdings + weights (any "
+    "positive numbers; renormalized to sum to 1, flagged if so), pulls each symbol's real "
+    "daily price history, and computes: the correlation matrix between holdings, portfolio "
+    "annualized volatility (Markowitz w'*cov*w, cross-checked two ways), and — via the "
+    "`empyrical` risk-stats library (empyrical-reloaded, the maintained fork of Quantopian's "
+    "widely-used open-source package) applied to the actual weighted portfolio-return series "
+    "— CAGR/max drawdown/Calmar ratio, Sharpe and Sortino ratios (risk-free rate from "
+    "macro_data's 10y G-Sec unless supplied), HISTORICAL (empirical-percentile, non-"
+    "parametric) VaR and CVaR at 95%/99% — not a normal-distribution z-score approximation, "
+    "and portfolio beta vs a benchmark index cross-checked against the weighted average of "
+    "individual betas. Also reports a Herfindahl-index-based 'effective number of positions' "
+    "(how concentrated the weights actually are, distinct from the raw holding count) — not "
+    "an empyrical metric, computed directly. Use whenever the user gives actual holdings/"
+    "weights and asks 'how risky is my portfolio' — this is the real computation, not the "
+    "individual-stock screen_stocks columns treated as a stand-in for portfolio risk.",
+    {"type": "object",
+     "properties": {
+         "holdings": {"type": "array",
+                      "items": {"type": "object",
+                                "properties": {"symbol": {"type": "string"},
+                                               "weight": {"type": "number"}},
+                                "required": ["symbol", "weight"]},
+                      "description": "e.g. [{'symbol':'TCS','weight':0.3}, "
+                                     "{'symbol':'HDFCBANK','weight':0.7}] — weights need not "
+                                     "sum to 1, they'll be renormalized"},
+         "benchmark": {"type": "string", "default": "nifty50"},
+         "years": {"type": "number", "default": 3.0,
+                   "description": "lookback window in years if start/end not given"},
+         "start": {"type": "string", "description": "YYYY-MM-DD"},
+         "end": {"type": "string", "description": "YYYY-MM-DD"},
+         "risk_free_pct": {"type": "number",
+                           "description": "annual %, overrides the macro_data 10y G-Sec default"},
+     },
+     "required": ["holdings"]},
+)
+async def portfolio_risk(args):
+    from . import portfolio_risk as pr
+    def work():
+        return pr.compute(args["holdings"], benchmark=args.get("benchmark", "nifty50"),
+                          years=float(args.get("years", 3.0)),
+                          start=args.get("start"), end=args.get("end"),
+                          risk_free_pct=args.get("risk_free_pct"))
+    try:
+        r = await asyncio.to_thread(work)
+    except ValueError as e:
+        return _err(str(e))
+    return _text(_js(r))
+
+
+@tool(
     "sector_analysis",
     "Aggregate view of a sector or industry: company count, total & median market cap, median "
     "valuation, and the leaders by market cap with headline metrics. Pass sector OR industry "
@@ -943,4 +1927,5 @@ ALL_TOOLS = [
     # analytical / research layer
     financial_health, forensic_checks, shareholding_trends, capital_allocation,
     management_guidance, business_profile, competitive_position, supply_chain,
+    portfolio_risk,
 ]

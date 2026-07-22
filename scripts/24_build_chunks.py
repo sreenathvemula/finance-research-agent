@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 24_build_chunks.py â€” Turn parsed concalls into retrieval chunks for RAG.
 

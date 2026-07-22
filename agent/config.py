@@ -19,6 +19,10 @@ MANIFEST_PATH = INDEX_DIR / f"rag_manifest_v{INDEX_VERSION}.json"
 SCREENER_CACHE = INDEX_DIR / "screener_metrics.parquet"
 HIST_FUNDAMENTALS_CACHE = INDEX_DIR / "historical_fundamentals.parquet"
 HIST_PRICE_RETURNS_CACHE = INDEX_DIR / "historical_price_returns.parquet"
+HIST_FUNDAMENTALS_CACHE = INDEX_DIR / "historical_fundamentals.parquet"
+HIST_PRICE_RETURNS_CACHE = INDEX_DIR / "historical_price_returns.parquet"
+HIST_FUNDAMENTALS_CACHE = INDEX_DIR / "historical_fundamentals.parquet"
+HIST_PRICE_RETURNS_CACHE = INDEX_DIR / "historical_price_returns.parquet"
 
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -63,6 +67,96 @@ MONTHS = {
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
     "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
 }
+
+# Credible-source allow-list for web research. The agent passes this to the
+# built-in WebSearch tool's allowed_domains so news/verification only comes from
+# primary regulators, exchanges, the company itself, or reputable financial media
+# — never anonymous forums, tip sheets or promotional blogs.
+CREDIBLE_WEB_DOMAINS = [
+    # regulators & exchanges (primary sources)
+    "nseindia.com", "bseindia.com", "sebi.gov.in", "rbi.org.in",
+    "mca.gov.in", "trai.gov.in", "ibbi.gov.in",
+    # data / filings
+    "screener.in", "trendlyne.com", "annualreports.com",
+    # reputable financial press
+    "moneycontrol.com", "economictimes.indiatimes.com", "business-standard.com",
+    "livemint.com", "thehindubusinessline.com", "financialexpress.com",
+    "reuters.com", "bloomberg.com", "cnbctv18.com", "ndtvprofit.com",
+    # rating agencies
+    "crisil.com", "icra.in", "careratings.com",
+]
+
+# Credible-source allow-list for web research. The agent passes this to the
+# built-in WebSearch tool's allowed_domains so news/verification only comes from
+# primary regulators, exchanges, the company itself, or reputable financial media
+# — never anonymous forums, tip sheets or promotional blogs.
+CREDIBLE_WEB_DOMAINS = [
+    # regulators & exchanges (primary sources)
+    "nseindia.com", "bseindia.com", "sebi.gov.in", "rbi.org.in",
+    "mca.gov.in", "trai.gov.in", "ibbi.gov.in",
+    # data / filings
+    "screener.in", "trendlyne.com", "annualreports.com",
+    # reputable financial press
+    "moneycontrol.com", "economictimes.indiatimes.com", "business-standard.com",
+    "livemint.com", "thehindubusinessline.com", "financialexpress.com",
+    "reuters.com", "bloomberg.com", "cnbctv18.com", "ndtvprofit.com",
+    # rating agencies
+    "crisil.com", "icra.in", "careratings.com",
+]
+
+# Credible-source allow-list for web research. The agent passes this to the
+# built-in WebSearch tool's allowed_domains so news/verification only comes from
+# primary regulators, exchanges, the company itself, or reputable financial media
+# — never anonymous forums, tip sheets or promotional blogs.
+CREDIBLE_WEB_DOMAINS = [
+    # regulators & exchanges (primary sources)
+    "nseindia.com", "bseindia.com", "sebi.gov.in", "rbi.org.in",
+    "mca.gov.in", "trai.gov.in", "ibbi.gov.in",
+    # data / filings
+    "screener.in", "trendlyne.com", "annualreports.com",
+    # reputable financial press
+    "moneycontrol.com", "economictimes.indiatimes.com", "business-standard.com",
+    "livemint.com", "thehindubusinessline.com", "financialexpress.com",
+    "reuters.com", "bloomberg.com", "cnbctv18.com", "ndtvprofit.com",
+    # rating agencies
+    "crisil.com", "icra.in", "careratings.com",
+]
+
+# Credible-source allow-list for web research. The agent passes this to the
+# built-in WebSearch tool's allowed_domains so news/verification only comes from
+# primary regulators, exchanges, the company itself, or reputable financial media
+# — never anonymous forums, tip sheets or promotional blogs.
+CREDIBLE_WEB_DOMAINS = [
+    # regulators & exchanges (primary sources)
+    "nseindia.com", "bseindia.com", "sebi.gov.in", "rbi.org.in",
+    "mca.gov.in", "trai.gov.in", "ibbi.gov.in",
+    # data / filings
+    "screener.in", "trendlyne.com", "annualreports.com",
+    # reputable financial press
+    "moneycontrol.com", "economictimes.indiatimes.com", "business-standard.com",
+    "livemint.com", "thehindubusinessline.com", "financialexpress.com",
+    "reuters.com", "bloomberg.com", "cnbctv18.com", "ndtvprofit.com",
+    # rating agencies
+    "crisil.com", "icra.in", "careratings.com",
+]
+
+# Credible-source allow-list for web research. The agent passes this to the
+# built-in WebSearch tool's allowed_domains so news/verification only comes from
+# primary regulators, exchanges, the company itself, or reputable financial media
+# — never anonymous forums, tip sheets or promotional blogs.
+CREDIBLE_WEB_DOMAINS = [
+    # regulators & exchanges (primary sources)
+    "nseindia.com", "bseindia.com", "sebi.gov.in", "rbi.org.in",
+    "mca.gov.in", "trai.gov.in", "ibbi.gov.in",
+    # data / filings
+    "screener.in", "trendlyne.com", "annualreports.com",
+    # reputable financial press
+    "moneycontrol.com", "economictimes.indiatimes.com", "business-standard.com",
+    "livemint.com", "thehindubusinessline.com", "financialexpress.com",
+    "reuters.com", "bloomberg.com", "cnbctv18.com", "ndtvprofit.com",
+    # rating agencies
+    "crisil.com", "icra.in", "careratings.com",
+]
 
 # Credible-source allow-list for web research. The agent passes this to the
 # built-in WebSearch tool's allowed_domains so news/verification only comes from

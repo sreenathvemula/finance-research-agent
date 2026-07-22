@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 22_transcript_parser.py â€” Parse concall transcript markdown into structured exchanges.
 

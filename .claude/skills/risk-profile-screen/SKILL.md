@@ -81,7 +81,11 @@ not just the final list. This is still pure screening: evidence and ranking, nev
    Group the shortlist by `sector`/`nse_industry` and report the distribution (e.g. "8/20 IT
    services, 5/20 banks — this shortlist is not sector-diversified regardless of the per-stock
    risk filters passing"). Flag it; don't silently let it pass because each row individually
-   cleared the bar.
+   cleared the bar. Sector labels are a proxy for correlation, not the thing itself — if the user
+   gives you actual holdings/weights for an existing portfolio (not just a fresh screen), call
+   the `portfolio_risk` tool (see `investing-principles`'s Portfolio risk management section) to
+   get the real correlation matrix, portfolio volatility, Sharpe/Sortino, historical VaR/CVaR and
+   effective-position-count from actual price history, rather than stopping at the sector count.
 
 ## Rules
 

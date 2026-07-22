@@ -29,6 +29,16 @@ user's; you provide a structured, evidence-based assessment.
    "ratio of remuneration of directors to median employee percentage increase")` — the
    mandatory KMP-pay-ratio-to-median-employee disclosure. A large, widening gap between
    leadership's raise and both the median employee's raise and actual company performance
+   bears on proportionality/fairness; a modest, performance-linked ratio does not. Include executive
+   pay as a conduct signal: `search_documents(symbol=..., doc_types=["annual_report"], query=
+   "ratio of remuneration of directors to median employee percentage increase")` — the
+   mandatory KMP-pay-ratio-to-median-employee disclosure. A large, widening gap between
+   leadership's raise and both the median employee's raise and actual company performance
+   bears on proportionality/fairness; a modest, performance-linked ratio does not. Include executive
+   pay as a conduct signal: `search_documents(symbol=..., doc_types=["annual_report"], query=
+   "ratio of remuneration of directors to median employee percentage increase")` — the
+   mandatory KMP-pay-ratio-to-median-employee disclosure. A large, widening gap between
+   leadership's raise and both the median employee's raise and actual company performance
    bears on proportionality/fairness; a modest, performance-linked ratio does not.
 
 4. **Walk the framework explicitly, with a materiality band for proportionality — not a vague

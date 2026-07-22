@@ -42,6 +42,13 @@ work."** A shortlist is where study starts, not where it ends.
    date_from=<FY start>, date_to=<FY end>, doc_types=["concall_transcript"])` scoped to that
    year/quarter — never an unscoped search when you already know the period.
 
+3b. **A specific past YEAR, not today's snapshot** ("ROCE > 20% in FY2024", "best/worst
+   performers in 2023") → `screen_by_year(year, kind="fundamental"|"price_return", min/max, ...)`
+   instead of `screen_stocks` — the latter only ever sees the latest values. For qualitative
+   colour on any matched name for that exact period, follow up with `search_documents(symbol=X,
+   date_from=<FY start>, date_to=<FY end>, doc_types=["concall_transcript"])` scoped to that
+   year/quarter — never an unscoped search when you already know the period.
+
 3c. **Multi-factor composite ranking — use whenever "best" means more than one metric** (e.g.
    "good businesses that are also cheap", or any ask combining quality + value + momentum). A
    single `sort_by` column crowns whichever metric you picked, which is arbitrary when the ask

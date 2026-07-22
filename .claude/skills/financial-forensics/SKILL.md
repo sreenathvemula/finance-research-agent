@@ -1,6 +1,6 @@
 ---
 name: financial-forensics
-description: Deep "find the issues with the financials" audit for one company — computes the named quantitative fraud/quality scores this data lake can actually support exactly (Altman Z''-Score, Piotroski F-Score, Sloan accrual ratio) from raw multi-year statements, hunts for accounting red flags, earnings-quality problems, governance concerns and balance-sheet risk, cross-checks against concalls and credit ratings, then flags what a pure-accounting view misses via a commercial/legal/operational risk pass (adapted from Anthropic's PE due-diligence workstream taxonomy). Use when the user asks to "find problems/issues/red flags", "check the accounting quality", "is anything wrong with the financials", "stress-test the numbers", or "how trustworthy are the financials".
+description: Deep "find the issues with the financials" audit for one company — computes the named quantitative fraud/quality scores this data lake can actually support exactly (Altman Z''-Score, Piotroski F-Score, Sloan accrual ratio) from raw multi-year statements, hunts for accounting red flags, earnings-quality problems, governance concerns and balance-sheet risk, traces the cash-flow and related-party money trail (where cash actually goes, RPT loans/guarantees, use-of-proceeds), cross-checks against concalls and credit ratings, then flags what a pure-accounting view misses via a commercial/legal/operational/policy-dependency risk pass (adapted from Anthropic's PE due-diligence workstream taxonomy). Use when the user asks to "find problems/issues/red flags", "check the accounting quality", "is anything wrong with the financials", "trace where the money is going", "stress-test the numbers", or "how trustworthy are the financials".
 ---
 
 # Financial forensics
@@ -70,9 +70,6 @@ clean company, it's an unconfirmed one.
    - **Quarter-to-quarter jumps unexplained by seasonality**: sequential (QoQ) swings in
      revenue/margin/PAT in `xbrl_quarterly` that don't match the company's known seasonal
      pattern or peer quarters in the same period — flag and ask why.
-   - **Related-party transactions**: scale of RPT revenue/expense/loans vs total revenue/
-     expenses in the balance sheet and notes-level detail available; a growing or opaque RPT
-     book is a classic vehicle for shifting value off the P&L investors see.
    - **Segment-level divergence hidden in the consolidated number**: use `xbrl_quarterly`'s
      segment revenue/result to check whether one strong segment is masking a weak or
      deteriorating one in the consolidated total — the trend tools only ever see the blended
@@ -84,9 +81,73 @@ clean company, it's an unconfirmed one.
    — "checked FY21-FY26 quarterly P&L and 8 quarters of xbrl_quarterly; no other-income spike or
    tax anomaly found" is a real finding even when it's negative.
 
+3d. **Follow the money — mandatory cash-flow and related-party trail.** Clean-looking P&L growth
+   can still mask value leaking out through where the cash actually goes once generated. This is
+   the deepest layer of the audit — don't skip it even when 3b/3c come back clean.
+   - **Cash-flow waterfall, year by year**: pull `financial_statements(cash_flow)` +
+     `capital_allocation` and trace operating cash flow → capex (split growth vs maintenance where
+     disclosed) → investments in subsidiaries/JVs/associates → loans & advances given → debt
+     raised vs repaid → dividends/buybacks paid. Flag if a rising share of operating cash is
+     routed into "investments" or "loans & advances" rather than capex, debt paydown, or
+     shareholder returns — that's the single biggest tell that cash is leaving the business for
+     somewhere other than its own operations.
+   - **Related-party transactions (RPT)**: pull the scale of RPT revenue/expense/loans/guarantees
+     from `forensic_checks` and, for notes-level detail (counterparty names, nature, amounts),
+     `search_documents(symbol=..., doc_types=["annual_report"], query="related party
+     transactions loans advances guarantees")`. Size RPT loans/guarantees as a % of net worth or
+     total assets, not just an absolute number — a growing or opaque RPT book, especially loans/
+     guarantees extended to unlisted promoter-linked entities, is the classic vehicle for shifting
+     value off the P&L investors see. Name the counterparty type (subsidiary, JV, promoter-owned
+     private entity) whenever the notes disclose it.
+   - **Investments in subsidiaries — opacity check**: from `financial_statements(balance_sheet)`,
+     track the "Investments" line's growth and, via `search_documents(annual_report)`, identify
+     which subsidiaries it's flowing into — unlisted, offshore/tax-haven, or JVs whose business
+     purpose isn't clearly tied to the parent's stated strategy warrant explicit mention even
+     absent proof of wrongdoing; say what's known and what remains opaque from local data.
+   - **Guarantees/collateral for group entities**: contingent liabilities (guarantees given on
+     behalf of subsidiaries or other group companies) don't hit the P&L but are real money-flow
+     risk if called — check the annual report's contingent-liability note via `search_documents`.
+   - **Use-of-proceeds check**: when `financial_statements(cash_flow)` shows a financing-activity
+     spike (IPO/QIP/rights issue/large debt raise), check whether the capex/investment that
+     followed matches the stated purpose (prospectus or annual report via `search_documents`, or
+     WebSearch) — proceeds diverted from their disclosed use is a recognised fraud pattern, not a
+     hypothetical one.
+   - **Promoter pledge — where the pledged cash went**: `shareholding_trends`/`forensic_checks`
+     shows the pledge and its trend; whether that borrowing served a disclosed legitimate purpose
+     or signals promoter-level financial stress unrelated to the company is a `search_documents`/
+     WebSearch question — say plainly when this can't be determined from local data.
+   - **Circular-flow check**: does the same counterparty appear as both a major customer and a
+     major supplier in segment/RPT disclosures? Does debtor/inventory growth persistently outrun
+     sales growth (`financial_health`/`xbrl_quarterly`) in a way consistent with channel-stuffing
+     rather than real cash collection?
+   State explicitly which cash-flow years and which annual-report RPT/contingent-liability notes
+   were actually read — "traced FY22-FY26 cash-flow waterfall and FY26 annual report RPT/
+   guarantee notes; no material undisclosed-purpose related-party flow found" is a real, reportable
+   finding even when negative.
+
 4. **Capital & ownership** — `capital_allocation` (is growth debt-funded, is FCF chronically
    negative) + `shareholding_trends` (promoter stake falling? pledge rising? = governance
    warning). `insider_trading` for PIT sell patterns.
+
+4b. **Executive pay (greed/governance signal)** — `search_documents(symbol=..., doc_types=
+   ["annual_report"], query="ratio of remuneration of directors to median employee KMP
+   percentage increase")`. Indian annual reports MUST disclose (Companies Act Rule 5(1)) each
+   whole-time director/KMP's remuneration ratio to median employee pay and their YoY % increase,
+   plus the company-wide median employee increase — pull the most recent year and compare: is
+   leadership's raise far outpacing the median employee's and the company's actual performance
+   (profit growth from `financial_health`)? A large, growing gap during flat/declining earnings
+   is a legitimate red flag; a modest ratio in line with performance is not. Absolute Rs-crore
+   pay figures are sometimes also stated — report them when present, ratio when not.
+
+4b. **Executive pay (greed/governance signal)** — `search_documents(symbol=..., doc_types=
+   ["annual_report"], query="ratio of remuneration of directors to median employee KMP
+   percentage increase")`. Indian annual reports MUST disclose (Companies Act Rule 5(1)) each
+   whole-time director/KMP's remuneration ratio to median employee pay and their YoY % increase,
+   plus the company-wide median employee increase — pull the most recent year and compare: is
+   leadership's raise far outpacing the median employee's and the company's actual performance
+   (profit growth from `financial_health`)? A large, growing gap during flat/declining earnings
+   is a legitimate red flag; a modest ratio in line with performance is not. Absolute Rs-crore
+   pay figures are sometimes also stated — report them when present, ratio when not.
 
 4b. **Executive pay (greed/governance signal)** — `search_documents(symbol=..., doc_types=
    ["annual_report"], query="ratio of remuneration of directors to median employee KMP
@@ -117,6 +178,17 @@ clean company, it's an unconfirmed one.
      concentrated customer base is a real risk even with spotless accounting.
    - **Legal/regulatory**: litigation, regulatory action, SEBI/RBI orders — WebSearch (credible
      domains), since this isn't in local structured data.
+   - **Government/policy dependency**: what share of revenue/margin is government-contract,
+     licence, tariff, or subsidy/PLI-scheme dependent (`business_profile`, `search_documents` on
+     annual reports/concalls for management's own disclosed sensitivity), and is any relevant
+     policy currently under review (WebSearch: ministry notifications, Budget documents, SEBI/RBI
+     circulars). Report only disclosed, sourced dependency — see `investing-principles` point 13
+     for why this must stay evidence-based and not speculate about undisclosed political ties.
+   - **Cyclical/seasonal context**: before calling any margin or growth swing a "concern," check
+     whether it's explained by where the industry sits in its cycle or its normal seasonal pattern
+     (`investing-principles` point 14) — a commodity-cycle peak or a routine festive-quarter jump
+     is a business-cycle fact, not an accounting red flag, and conflating the two miscalibrates
+     the audit's own findings.
    - **Operational**: key-person/management dependency (cross-check `management_guidance` for
      signs of a single-founder-dependent narrative), vendor/supplier concentration
      (`supply_chain`).
@@ -136,9 +208,11 @@ necessarily thesis-changing on its own), **Minor = manageable** (worth recording
 matter alone) — each a one-line claim + the number(s) + the source. Separate "confirmed by
 multiple sources" from "single-source / needs verification". Add a short **"Raw statements
 checked"** line listing exactly which statements/periods were read line-by-line in steps 3b/3c
-(this is what distinguishes this audit from reading `financial_health`'s summary and stopping),
-and a **"Beyond accounts"** line noting what step 7 covered and what it explicitly couldn't (HR/
-IT/ESG gaps). End with the 2-3 questions the user should put to management or dig into next.
+(this is what distinguishes this audit from reading `financial_health`'s summary and stopping), a
+**"Money trail"** line summarising what step 3d's cash-flow waterfall and RPT/contingent-liability
+notes pass found (or didn't — a clean trail is a reportable finding too), and a **"Beyond
+accounts"** line noting what step 7 covered and what it explicitly couldn't (HR/IT/ESG gaps). End
+with the 2-3 questions the user should put to management or dig into next.
 
 ## Rules
 
@@ -146,11 +220,16 @@ IT/ESG gaps). End with the 2-3 questions the user should put to management or di
   CFO/PAT is not an accruals problem). `financial_health` already handles these — don't
   re-flag them.
 - Never treat a clean `financial_health`/`forensic_checks` read as sufficient on its own — steps
-  3b (named scores) and 3c (raw-line-item pass) are what catch the things multi-year trend flags
-  are structurally blind to (a single bad quarter inside a good year, a one-off gain, a
-  related-party shift, a distress trajectory that only shows up once Altman/Piotroski/Sloan are
-  actually computed). Skipping either is skipping the audit, not shortening it.
+  3b (named scores), 3c (raw-line-item pass), and 3d (money trail) are what catch the things
+  multi-year trend flags are structurally blind to (a single bad quarter inside a good year, a
+  one-off gain, a related-party shift, a distress trajectory that only shows up once
+  Altman/Piotroski/Sloan are actually computed, cash quietly rerouted into an opaque related
+  entity). Skipping any of the three is skipping the audit, not shortening it.
 - Every claim carries its figure and source. Don't manufacture alarm; if the financials look
-  clean after the score pass AND the raw-line-item pass, say so plainly with the evidence from
-  both — a "score clean, line-items clean" conclusion is worth exactly as much as a well-founded
-  "here's what's wrong" one.
+  clean after the score pass, the raw-line-item pass, AND the money-trail pass, say so plainly
+  with the evidence from all three — a "score clean, line-items clean, money trail clean"
+  conclusion is worth exactly as much as a well-founded "here's what's wrong" one.
+- Government/policy-dependency findings and RPT/promoter-connection findings must stay
+  evidence-based and sourced — quantify disclosed dependency or cite a credible report; never
+  assert an undisclosed political or personal connection from inference alone
+  (`investing-principles` point 13).

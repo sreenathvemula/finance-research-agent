@@ -14,6 +14,62 @@ tiktoken
 anthropic          # Claude API SDK
 claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
 
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
+# ── Claude / Anthropic ───────────────────────────────────
+anthropic          # Claude API SDK
+claude-agent-sdk   # Claude Agent SDK (agent loops, tools, MCP)
+
 # ── Agent framework (OPTIONAL — agent/ uses Claude Agent SDK only) ──
 # Installed for experimentation; the Finance agent does NOT depend on these.
 langchain
@@ -34,6 +90,7 @@ numpy
 pyarrow          # parquet price files
 openpyxl         # Excel read/write
 yfinance
+empyrical-reloaded  # portfolio risk stats (Sharpe/Sortino/VaR/CVaR/drawdown/beta) — imports as `empyrical`
 
 # ── Scraping / HTTP (used by scripts/) ───────────────────
 requests

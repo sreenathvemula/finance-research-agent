@@ -76,6 +76,50 @@ def latest_reported_period(symbol: str) -> str | None:
     return str(df.columns[-1])
 
 
+def latest_reported_period(symbol: str) -> str | None:
+    """Latest quarter this company has actually filed results for (last column
+    of quarterly_results.csv). Use this whenever a query names a company but
+    no period — never guess a 'current quarter' from today's calendar date,
+    since filings lag the calendar by weeks."""
+    df = financial_statement(symbol, "quarterly_results")
+    if df is None or df.shape[1] < 2:
+        return None
+    return str(df.columns[-1])
+
+
+def latest_reported_period(symbol: str) -> str | None:
+    """Latest quarter this company has actually filed results for (last column
+    of quarterly_results.csv). Use this whenever a query names a company but
+    no period — never guess a 'current quarter' from today's calendar date,
+    since filings lag the calendar by weeks."""
+    df = financial_statement(symbol, "quarterly_results")
+    if df is None or df.shape[1] < 2:
+        return None
+    return str(df.columns[-1])
+
+
+def latest_reported_period(symbol: str) -> str | None:
+    """Latest quarter this company has actually filed results for (last column
+    of quarterly_results.csv). Use this whenever a query names a company but
+    no period — never guess a 'current quarter' from today's calendar date,
+    since filings lag the calendar by weeks."""
+    df = financial_statement(symbol, "quarterly_results")
+    if df is None or df.shape[1] < 2:
+        return None
+    return str(df.columns[-1])
+
+
+def latest_reported_period(symbol: str) -> str | None:
+    """Latest quarter this company has actually filed results for (last column
+    of quarterly_results.csv). Use this whenever a query names a company but
+    no period — never guess a 'current quarter' from today's calendar date,
+    since filings lag the calendar by weeks."""
+    df = financial_statement(symbol, "quarterly_results")
+    if df is None or df.shape[1] < 2:
+        return None
+    return str(df.columns[-1])
+
+
 # --------------------------------------------------------- per-company JSON --
 def _read_json(path: Path):
     if not path.exists():
@@ -243,6 +287,426 @@ def live_technicals(symbol: str) -> dict | None:
     if m.get("DMA 200") and m.get("Current price"):
         m["Above DMA200"] = m["Current price"] > m["DMA 200"]
     return {k: val for k, val in m.items() if val is not None}
+
+
+def price_analytics(symbol: str, benchmark: str = "nifty50") -> dict | None:
+    """Trader-oriented price stats beyond basic momentum: 52w range & position,
+    max drawdown, annualized volatility, volume trend, moving-average crossover
+    (golden/death cross) and relative strength vs a benchmark index."""
+    df = prices(symbol)
+    if df is None or df.empty or "Close" not in df:
+        return None
+    c = df["Close"].astype(float).dropna()          # nominal price levels
+    if len(c) < 30:
+        return None
+    # Adjusted series (splits/bonuses/dividends) for all PERFORMANCE metrics -
+    # raw Close produces phantom -50% "drawdowns" on ex-bonus dates. 52w range,
+    # current price and DMAs stay on nominal Close (what the user sees quoted).
+    ca = df["Adj Close"].astype(float).dropna() if "Adj Close" in df else c
+    dates = df.loc[c.index, "Date"]
+    cur = float(c.iloc[-1])
+    last_date = pd.Timestamp(dates.iloc[-1])
+    out: dict = {"symbol": symbol.upper(), "as_of": str(last_date.date()),
+                 "current_price": round(cur, 2),
+                 "performance_basis": "Adj Close (split/bonus/dividend-adjusted)"}
+
+    last252 = c.tail(252)
+    hi52, lo52 = float(last252.max()), float(last252.min())
+    out["high_52w"], out["low_52w"] = round(hi52, 2), round(lo52, 2)
+    out["pct_below_52w_high"] = round((cur / hi52 - 1) * 100, 1) if hi52 else None
+    out["pct_above_52w_low"] = round((cur / lo52 - 1) * 100, 1) if lo52 else None
+
+    # all-time high & drawdown on ADJUSTED series (correct peak-to-trough)
+    athc = float(ca.max())
+    out["pct_below_all_time_high"] = round((float(ca.iloc[-1]) / athc - 1) * 100, 1) if athc else None
+    roll_max = ca.cummax()
+    dd = (ca / roll_max - 1) * 100
+    out["max_drawdown_pct"] = round(float(dd.min()), 1)
+    out["current_drawdown_pct"] = round(float(dd.iloc[-1]), 1)
+
+    # annualized volatility from last-1y adjusted daily returns
+    rets = ca.pct_change().dropna()
+    if len(rets) >= 30:
+        out["annualized_volatility_pct"] = round(float(rets.tail(252).std() * (252 ** 0.5) * 100), 1)
+
+    # volume trend: recent 20d avg vs 200d avg
+    if "Volume" in df:
+        v = df["Volume"].astype(float).dropna()
+        if len(v) >= 200:
+            v20, v200 = float(v.tail(20).mean()), float(v.tail(200).mean())
+            out["avg_volume_20d"] = int(v20)
+            out["volume_vs_200d_avg_pct"] = round((v20 / v200 - 1) * 100, 1) if v200 else None
+
+    # moving-average crossover state
+    dma50, dma200 = c.rolling(50).mean(), c.rolling(200).mean()
+    if pd.notna(dma50.iloc[-1]) and pd.notna(dma200.iloc[-1]):
+        d50, d200 = float(dma50.iloc[-1]), float(dma200.iloc[-1])
+        out["dma50"], out["dma200"] = round(d50, 2), round(d200, 2)
+        out["ma_structure"] = ("golden (50DMA above 200DMA - bullish structure)"
+                               if d50 > d200 else
+                               "death (50DMA below 200DMA - bearish structure)")
+
+    # relative strength vs benchmark over 3m / 1y (adjusted series)
+    def ret_over(series, days):
+        if len(series) <= days:
+            return None
+        b = series.iloc[-1 - days]
+        return (series.iloc[-1] / b - 1) * 100 if b else None
+    bench = index_prices(benchmark)
+    rs = {}
+    for label, days in [("3m", 63), ("1y", 252)]:
+        sr = ret_over(ca, days)
+        if sr is None:
+            continue
+        br = None
+        if bench is not None and "Close" in bench:
+            bc = bench["Close"].astype(float).dropna()
+            br = ret_over(bc, days)
+        if br is not None:
+            rs[label] = {"stock_return_pct": round(float(sr), 1),
+                         f"{benchmark}_return_pct": round(float(br), 1),
+                         "relative_strength_pct": round(float(sr - br), 1)}
+        else:
+            rs[label] = {"stock_return_pct": round(float(sr), 1)}
+    if rs:
+        out["relative_strength"] = rs
+    return out
+
+
+def price_analytics(symbol: str, benchmark: str = "nifty50") -> dict | None:
+    """Trader-oriented price stats beyond basic momentum: 52w range & position,
+    max drawdown, annualized volatility, volume trend, moving-average crossover
+    (golden/death cross) and relative strength vs a benchmark index."""
+    df = prices(symbol)
+    if df is None or df.empty or "Close" not in df:
+        return None
+    c = df["Close"].astype(float).dropna()          # nominal price levels
+    if len(c) < 30:
+        return None
+    # Adjusted series (splits/bonuses/dividends) for all PERFORMANCE metrics -
+    # raw Close produces phantom -50% "drawdowns" on ex-bonus dates. 52w range,
+    # current price and DMAs stay on nominal Close (what the user sees quoted).
+    ca = df["Adj Close"].astype(float).dropna() if "Adj Close" in df else c
+    dates = df.loc[c.index, "Date"]
+    cur = float(c.iloc[-1])
+    last_date = pd.Timestamp(dates.iloc[-1])
+    out: dict = {"symbol": symbol.upper(), "as_of": str(last_date.date()),
+                 "current_price": round(cur, 2),
+                 "performance_basis": "Adj Close (split/bonus/dividend-adjusted)"}
+
+    last252 = c.tail(252)
+    hi52, lo52 = float(last252.max()), float(last252.min())
+    out["high_52w"], out["low_52w"] = round(hi52, 2), round(lo52, 2)
+    out["pct_below_52w_high"] = round((cur / hi52 - 1) * 100, 1) if hi52 else None
+    out["pct_above_52w_low"] = round((cur / lo52 - 1) * 100, 1) if lo52 else None
+
+    # all-time high & drawdown on ADJUSTED series (correct peak-to-trough)
+    athc = float(ca.max())
+    out["pct_below_all_time_high"] = round((float(ca.iloc[-1]) / athc - 1) * 100, 1) if athc else None
+    roll_max = ca.cummax()
+    dd = (ca / roll_max - 1) * 100
+    out["max_drawdown_pct"] = round(float(dd.min()), 1)
+    out["current_drawdown_pct"] = round(float(dd.iloc[-1]), 1)
+
+    # annualized volatility from last-1y adjusted daily returns
+    rets = ca.pct_change().dropna()
+    if len(rets) >= 30:
+        out["annualized_volatility_pct"] = round(float(rets.tail(252).std() * (252 ** 0.5) * 100), 1)
+
+    # volume trend: recent 20d avg vs 200d avg
+    if "Volume" in df:
+        v = df["Volume"].astype(float).dropna()
+        if len(v) >= 200:
+            v20, v200 = float(v.tail(20).mean()), float(v.tail(200).mean())
+            out["avg_volume_20d"] = int(v20)
+            out["volume_vs_200d_avg_pct"] = round((v20 / v200 - 1) * 100, 1) if v200 else None
+
+    # moving-average crossover state
+    dma50, dma200 = c.rolling(50).mean(), c.rolling(200).mean()
+    if pd.notna(dma50.iloc[-1]) and pd.notna(dma200.iloc[-1]):
+        d50, d200 = float(dma50.iloc[-1]), float(dma200.iloc[-1])
+        out["dma50"], out["dma200"] = round(d50, 2), round(d200, 2)
+        out["ma_structure"] = ("golden (50DMA above 200DMA - bullish structure)"
+                               if d50 > d200 else
+                               "death (50DMA below 200DMA - bearish structure)")
+
+    # relative strength vs benchmark over 3m / 1y (adjusted series)
+    def ret_over(series, days):
+        if len(series) <= days:
+            return None
+        b = series.iloc[-1 - days]
+        return (series.iloc[-1] / b - 1) * 100 if b else None
+    bench = index_prices(benchmark)
+    rs = {}
+    for label, days in [("3m", 63), ("1y", 252)]:
+        sr = ret_over(ca, days)
+        if sr is None:
+            continue
+        br = None
+        if bench is not None and "Close" in bench:
+            bc = bench["Close"].astype(float).dropna()
+            br = ret_over(bc, days)
+        if br is not None:
+            rs[label] = {"stock_return_pct": round(float(sr), 1),
+                         f"{benchmark}_return_pct": round(float(br), 1),
+                         "relative_strength_pct": round(float(sr - br), 1)}
+        else:
+            rs[label] = {"stock_return_pct": round(float(sr), 1)}
+    if rs:
+        out["relative_strength"] = rs
+    return out
+
+
+def price_analytics(symbol: str, benchmark: str = "nifty50") -> dict | None:
+    """Trader-oriented price stats beyond basic momentum: 52w range & position,
+    max drawdown, annualized volatility, volume trend, moving-average crossover
+    (golden/death cross) and relative strength vs a benchmark index."""
+    df = prices(symbol)
+    if df is None or df.empty or "Close" not in df:
+        return None
+    c = df["Close"].astype(float).dropna()          # nominal price levels
+    if len(c) < 30:
+        return None
+    # Adjusted series (splits/bonuses/dividends) for all PERFORMANCE metrics -
+    # raw Close produces phantom -50% "drawdowns" on ex-bonus dates. 52w range,
+    # current price and DMAs stay on nominal Close (what the user sees quoted).
+    ca = df["Adj Close"].astype(float).dropna() if "Adj Close" in df else c
+    dates = df.loc[c.index, "Date"]
+    cur = float(c.iloc[-1])
+    last_date = pd.Timestamp(dates.iloc[-1])
+    out: dict = {"symbol": symbol.upper(), "as_of": str(last_date.date()),
+                 "current_price": round(cur, 2),
+                 "performance_basis": "Adj Close (split/bonus/dividend-adjusted)"}
+
+    last252 = c.tail(252)
+    hi52, lo52 = float(last252.max()), float(last252.min())
+    out["high_52w"], out["low_52w"] = round(hi52, 2), round(lo52, 2)
+    out["pct_below_52w_high"] = round((cur / hi52 - 1) * 100, 1) if hi52 else None
+    out["pct_above_52w_low"] = round((cur / lo52 - 1) * 100, 1) if lo52 else None
+
+    # all-time high & drawdown on ADJUSTED series (correct peak-to-trough)
+    athc = float(ca.max())
+    out["pct_below_all_time_high"] = round((float(ca.iloc[-1]) / athc - 1) * 100, 1) if athc else None
+    roll_max = ca.cummax()
+    dd = (ca / roll_max - 1) * 100
+    out["max_drawdown_pct"] = round(float(dd.min()), 1)
+    out["current_drawdown_pct"] = round(float(dd.iloc[-1]), 1)
+
+    # annualized volatility from last-1y adjusted daily returns
+    rets = ca.pct_change().dropna()
+    if len(rets) >= 30:
+        out["annualized_volatility_pct"] = round(float(rets.tail(252).std() * (252 ** 0.5) * 100), 1)
+
+    # volume trend: recent 20d avg vs 200d avg
+    if "Volume" in df:
+        v = df["Volume"].astype(float).dropna()
+        if len(v) >= 200:
+            v20, v200 = float(v.tail(20).mean()), float(v.tail(200).mean())
+            out["avg_volume_20d"] = int(v20)
+            out["volume_vs_200d_avg_pct"] = round((v20 / v200 - 1) * 100, 1) if v200 else None
+
+    # moving-average crossover state
+    dma50, dma200 = c.rolling(50).mean(), c.rolling(200).mean()
+    if pd.notna(dma50.iloc[-1]) and pd.notna(dma200.iloc[-1]):
+        d50, d200 = float(dma50.iloc[-1]), float(dma200.iloc[-1])
+        out["dma50"], out["dma200"] = round(d50, 2), round(d200, 2)
+        out["ma_structure"] = ("golden (50DMA above 200DMA - bullish structure)"
+                               if d50 > d200 else
+                               "death (50DMA below 200DMA - bearish structure)")
+
+    # relative strength vs benchmark over 3m / 1y (adjusted series)
+    def ret_over(series, days):
+        if len(series) <= days:
+            return None
+        b = series.iloc[-1 - days]
+        return (series.iloc[-1] / b - 1) * 100 if b else None
+    bench = index_prices(benchmark)
+    rs = {}
+    for label, days in [("3m", 63), ("1y", 252)]:
+        sr = ret_over(ca, days)
+        if sr is None:
+            continue
+        br = None
+        if bench is not None and "Close" in bench:
+            bc = bench["Close"].astype(float).dropna()
+            br = ret_over(bc, days)
+        if br is not None:
+            rs[label] = {"stock_return_pct": round(float(sr), 1),
+                         f"{benchmark}_return_pct": round(float(br), 1),
+                         "relative_strength_pct": round(float(sr - br), 1)}
+        else:
+            rs[label] = {"stock_return_pct": round(float(sr), 1)}
+    if rs:
+        out["relative_strength"] = rs
+    return out
+
+
+def price_analytics(symbol: str, benchmark: str = "nifty50") -> dict | None:
+    """Trader-oriented price stats beyond basic momentum: 52w range & position,
+    max drawdown, annualized volatility, volume trend, moving-average crossover
+    (golden/death cross) and relative strength vs a benchmark index."""
+    df = prices(symbol)
+    if df is None or df.empty or "Close" not in df:
+        return None
+    c = df["Close"].astype(float).dropna()          # nominal price levels
+    if len(c) < 30:
+        return None
+    # Adjusted series (splits/bonuses/dividends) for all PERFORMANCE metrics -
+    # raw Close produces phantom -50% "drawdowns" on ex-bonus dates. 52w range,
+    # current price and DMAs stay on nominal Close (what the user sees quoted).
+    ca = df["Adj Close"].astype(float).dropna() if "Adj Close" in df else c
+    dates = df.loc[c.index, "Date"]
+    cur = float(c.iloc[-1])
+    last_date = pd.Timestamp(dates.iloc[-1])
+    out: dict = {"symbol": symbol.upper(), "as_of": str(last_date.date()),
+                 "current_price": round(cur, 2),
+                 "performance_basis": "Adj Close (split/bonus/dividend-adjusted)"}
+
+    last252 = c.tail(252)
+    hi52, lo52 = float(last252.max()), float(last252.min())
+    out["high_52w"], out["low_52w"] = round(hi52, 2), round(lo52, 2)
+    out["pct_below_52w_high"] = round((cur / hi52 - 1) * 100, 1) if hi52 else None
+    out["pct_above_52w_low"] = round((cur / lo52 - 1) * 100, 1) if lo52 else None
+
+    # all-time high & drawdown on ADJUSTED series (correct peak-to-trough)
+    athc = float(ca.max())
+    out["pct_below_all_time_high"] = round((float(ca.iloc[-1]) / athc - 1) * 100, 1) if athc else None
+    roll_max = ca.cummax()
+    dd = (ca / roll_max - 1) * 100
+    out["max_drawdown_pct"] = round(float(dd.min()), 1)
+    out["current_drawdown_pct"] = round(float(dd.iloc[-1]), 1)
+
+    # annualized volatility from last-1y adjusted daily returns
+    rets = ca.pct_change().dropna()
+    if len(rets) >= 30:
+        out["annualized_volatility_pct"] = round(float(rets.tail(252).std() * (252 ** 0.5) * 100), 1)
+
+    # volume trend: recent 20d avg vs 200d avg
+    if "Volume" in df:
+        v = df["Volume"].astype(float).dropna()
+        if len(v) >= 200:
+            v20, v200 = float(v.tail(20).mean()), float(v.tail(200).mean())
+            out["avg_volume_20d"] = int(v20)
+            out["volume_vs_200d_avg_pct"] = round((v20 / v200 - 1) * 100, 1) if v200 else None
+
+    # moving-average crossover state
+    dma50, dma200 = c.rolling(50).mean(), c.rolling(200).mean()
+    if pd.notna(dma50.iloc[-1]) and pd.notna(dma200.iloc[-1]):
+        d50, d200 = float(dma50.iloc[-1]), float(dma200.iloc[-1])
+        out["dma50"], out["dma200"] = round(d50, 2), round(d200, 2)
+        out["ma_structure"] = ("golden (50DMA above 200DMA - bullish structure)"
+                               if d50 > d200 else
+                               "death (50DMA below 200DMA - bearish structure)")
+
+    # relative strength vs benchmark over 3m / 1y (adjusted series)
+    def ret_over(series, days):
+        if len(series) <= days:
+            return None
+        b = series.iloc[-1 - days]
+        return (series.iloc[-1] / b - 1) * 100 if b else None
+    bench = index_prices(benchmark)
+    rs = {}
+    for label, days in [("3m", 63), ("1y", 252)]:
+        sr = ret_over(ca, days)
+        if sr is None:
+            continue
+        br = None
+        if bench is not None and "Close" in bench:
+            bc = bench["Close"].astype(float).dropna()
+            br = ret_over(bc, days)
+        if br is not None:
+            rs[label] = {"stock_return_pct": round(float(sr), 1),
+                         f"{benchmark}_return_pct": round(float(br), 1),
+                         "relative_strength_pct": round(float(sr - br), 1)}
+        else:
+            rs[label] = {"stock_return_pct": round(float(sr), 1)}
+    if rs:
+        out["relative_strength"] = rs
+    return out
+
+
+def price_analytics(symbol: str, benchmark: str = "nifty50") -> dict | None:
+    """Trader-oriented price stats beyond basic momentum: 52w range & position,
+    max drawdown, annualized volatility, volume trend, moving-average crossover
+    (golden/death cross) and relative strength vs a benchmark index."""
+    df = prices(symbol)
+    if df is None or df.empty or "Close" not in df:
+        return None
+    c = df["Close"].astype(float).dropna()          # nominal price levels
+    if len(c) < 30:
+        return None
+    # Adjusted series (splits/bonuses/dividends) for all PERFORMANCE metrics -
+    # raw Close produces phantom -50% "drawdowns" on ex-bonus dates. 52w range,
+    # current price and DMAs stay on nominal Close (what the user sees quoted).
+    ca = df["Adj Close"].astype(float).dropna() if "Adj Close" in df else c
+    dates = df.loc[c.index, "Date"]
+    cur = float(c.iloc[-1])
+    last_date = pd.Timestamp(dates.iloc[-1])
+    out: dict = {"symbol": symbol.upper(), "as_of": str(last_date.date()),
+                 "current_price": round(cur, 2),
+                 "performance_basis": "Adj Close (split/bonus/dividend-adjusted)"}
+
+    last252 = c.tail(252)
+    hi52, lo52 = float(last252.max()), float(last252.min())
+    out["high_52w"], out["low_52w"] = round(hi52, 2), round(lo52, 2)
+    out["pct_below_52w_high"] = round((cur / hi52 - 1) * 100, 1) if hi52 else None
+    out["pct_above_52w_low"] = round((cur / lo52 - 1) * 100, 1) if lo52 else None
+
+    # all-time high & drawdown on ADJUSTED series (correct peak-to-trough)
+    athc = float(ca.max())
+    out["pct_below_all_time_high"] = round((float(ca.iloc[-1]) / athc - 1) * 100, 1) if athc else None
+    roll_max = ca.cummax()
+    dd = (ca / roll_max - 1) * 100
+    out["max_drawdown_pct"] = round(float(dd.min()), 1)
+    out["current_drawdown_pct"] = round(float(dd.iloc[-1]), 1)
+
+    # annualized volatility from last-1y adjusted daily returns
+    rets = ca.pct_change().dropna()
+    if len(rets) >= 30:
+        out["annualized_volatility_pct"] = round(float(rets.tail(252).std() * (252 ** 0.5) * 100), 1)
+
+    # volume trend: recent 20d avg vs 200d avg
+    if "Volume" in df:
+        v = df["Volume"].astype(float).dropna()
+        if len(v) >= 200:
+            v20, v200 = float(v.tail(20).mean()), float(v.tail(200).mean())
+            out["avg_volume_20d"] = int(v20)
+            out["volume_vs_200d_avg_pct"] = round((v20 / v200 - 1) * 100, 1) if v200 else None
+
+    # moving-average crossover state
+    dma50, dma200 = c.rolling(50).mean(), c.rolling(200).mean()
+    if pd.notna(dma50.iloc[-1]) and pd.notna(dma200.iloc[-1]):
+        d50, d200 = float(dma50.iloc[-1]), float(dma200.iloc[-1])
+        out["dma50"], out["dma200"] = round(d50, 2), round(d200, 2)
+        out["ma_structure"] = ("golden (50DMA above 200DMA - bullish structure)"
+                               if d50 > d200 else
+                               "death (50DMA below 200DMA - bearish structure)")
+
+    # relative strength vs benchmark over 3m / 1y (adjusted series)
+    def ret_over(series, days):
+        if len(series) <= days:
+            return None
+        b = series.iloc[-1 - days]
+        return (series.iloc[-1] / b - 1) * 100 if b else None
+    bench = index_prices(benchmark)
+    rs = {}
+    for label, days in [("3m", 63), ("1y", 252)]:
+        sr = ret_over(ca, days)
+        if sr is None:
+            continue
+        br = None
+        if bench is not None and "Close" in bench:
+            bc = bench["Close"].astype(float).dropna()
+            br = ret_over(bc, days)
+        if br is not None:
+            rs[label] = {"stock_return_pct": round(float(sr), 1),
+                         f"{benchmark}_return_pct": round(float(br), 1),
+                         "relative_strength_pct": round(float(sr - br), 1)}
+        else:
+            rs[label] = {"stock_return_pct": round(float(sr), 1)}
+    if rs:
+        out["relative_strength"] = rs
+    return out
 
 
 def price_analytics(symbol: str, benchmark: str = "nifty50") -> dict | None:
